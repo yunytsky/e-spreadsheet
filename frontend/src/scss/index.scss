@@ -1,0 +1,100 @@
+//Reset
+@import "reset";
+//--------------------
+//Colors
+@import "colors";
+//--------------------
+//Typography
+@import "typography";
+//--------------------
+//--------------------
+//Styles
+.App{
+   display: flex;
+   flex-direction: column;
+}
+
+.header{
+   text-align: center;
+   // transform: translate(50%,0);
+   color: $white;
+   padding: 8px;
+   background-color: $black-75;
+   margin-bottom: 16px;
+}
+
+.spreadsheet{  
+   display: flex;
+   flex-direction: column;
+   max-width: 100%;
+}
+.row{
+   // &:first-child{
+   //    .cell:first-child{
+   //       background-color: $black-10;
+   //    }
+   // }
+   &:last-child{
+      border-bottom: 1px solid $black-10;
+   }
+   display: flex;
+}
+
+.row-cells{
+   display: flex;
+}
+
+span.cell{
+   @include body-3;
+}
+.cell{
+   border: 1px solid $black-10;
+   border-right: 0;
+   border-bottom: 0;
+   padding: 8px;
+   width: 10rem;
+   text-align: center;
+   &:last-child{
+      border-right: 1px solid $black-10;
+   }
+}
+
+//Toolbar
+input{
+   padding: 4px 16px;
+   border: 1px solid $black-10;
+   border-radius: 4px;
+}
+
+.toolbar{
+   padding: 0 16px;  
+   margin-bottom: 16px;
+   input{
+      margin-right: 32px;
+      &:last-child{
+         margin-right: 0;
+      }
+   }
+}
+
+.file-button{
+   margin-right: 64px;
+   @include button-1;
+   position: relative;
+   padding-right: 1em;
+   &:after{
+      content: "";
+      position: absolute;
+      top: .4em;
+      right: 0;
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 8px solid $black-50;
+   }
+}
+
+.file-menu{
+   display: none;
+}
