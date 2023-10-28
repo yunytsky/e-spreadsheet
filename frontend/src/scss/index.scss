@@ -16,10 +16,10 @@
 
 .header{
    text-align: center;
-   // transform: translate(50%,0);
-   color: $white;
+   user-select: none;
+   color: $green-01;
    padding: 8px;
-   background-color: $black-75;
+   background-color: $green-03;
    margin-bottom: 16px;
 }
 
@@ -29,11 +29,6 @@
    max-width: 100%;
 }
 .row{
-   // &:first-child{
-   //    .cell:first-child{
-   //       background-color: $black-10;
-   //    }
-   // }
    &:last-child{
       border-bottom: 1px solid $black-10;
    }
@@ -44,9 +39,14 @@
    display: flex;
 }
 
-span.cell{
+h5.cell{
+   user-select: none;
+}
+
+div.cell{
    @include body-3;
 }
+
 .cell{
    border: 1px solid $black-10;
    border-right: 0;
@@ -57,9 +57,18 @@ span.cell{
    &:last-child{
       border-right: 1px solid $black-10;
    }
+   &:focus{
+      border: 3px solid rgba($color: $green-03, $alpha: 1);
+      box-shadow:inset 0px 0px 0px 2px $green-01 !important;
+   }
 }
 
-//Toolbar
+.cell.selected{
+   box-shadow:inset 0px 0px 0px 2px $green-01;
+
+}
+
+//Toolba
 input{
    padding: 4px 16px;
    border: 1px solid $black-10;
@@ -67,6 +76,7 @@ input{
 }
 
 .toolbar{
+   display: flex;
    padding: 0 16px;  
    margin-bottom: 16px;
    input{
@@ -77,24 +87,113 @@ input{
    }
 }
 
+.file-actions{
+   position: relative;
+}
+
 .file-button{
+
    margin-right: 64px;
    @include button-1;
    position: relative;
-   padding-right: 1em;
+   padding: .5em 1.5em .5em .5em;
    &:after{
       content: "";
       position: absolute;
-      top: .4em;
+      top: 1em;
       right: 0;
       width: 0;
       height: 0;
       border-left: 4px solid transparent;
       border-right: 4px solid transparent;
-      border-top: 8px solid $black-50;
+      border-top: 8px solid $green-01;
+      border-radius: 2px;
+      margin-right: .5em;
+   }
+   &:hover{
+      border-radius: 4px;
+      background-color: $black-5;
    }
 }
 
 .file-menu{
+   padding: 8px 0;
    display: none;
+   white-space: nowrap;
+   position: absolute;
+   left: 0;
+   top: 2em;
+   border: 1px solid $black-10;
+   background-color: #fff;
+   box-shadow: $shadow;
+   max-width: 25vw;
+
+   ul{
+      li{
+         padding:16px 32px;
+         cursor: pointer;
+
+         &:hover{
+            background-color: rgba($color: $black-5, $alpha: .6);
+         }
+      }
+   }
+
+   #file-save::before{
+      background-image: url("./assets/Save.svg");
+
+   }
+
+   #file-create::before{
+      background-image: url("./assets/Add.svg");
+
+   }
+
+   #file-upload::before{
+      background-image: url("./assets/Folder.svg");
+
+   }
+
+   #file-save::before, #file-create::before,#file-upload::before{
+      content: "";
+      position: absolute;
+      top: 2.2px;
+      left: 0;
+      filter: brightness(0) invert(9%) sepia(9%) saturate(5220%) hue-rotate(202deg) brightness(87%) contrast(111%);
+
+
+
+      background-repeat: no-repeat;
+      background-size:contain;
+      width: 18px;
+      height: 18px;
+   }
+
+   #file-upload{
+      @include button-2;
+         cursor: pointer;
+      input{
+         padding: 0;
+         margin: 0;
+         border: none;
+         outline: none;
+         background: none;
+         visibility: hidden;     
+         width: 100%;    
+         &::-webkit-file-upload-button {
+            display: none;
+          }
+      }
+      
+   }
+
+   #file-save, #file-create, #file-upload{
+      position: relative;
+      padding-left: 26px;
+      @include button-2;
+
+
+   }
+
+
 }

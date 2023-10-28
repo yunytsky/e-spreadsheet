@@ -169,9 +169,12 @@ h6 {
 
 .header {
   text-align: center;
-  color: #FAFBFF;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  color: #2AB168;
   padding: 8px;
-  background-color: #44465B;
+  background-color: #C9F1E0;
   margin-bottom: 16px;
 }
 
@@ -192,7 +195,13 @@ h6 {
   display: flex;
 }
 
-span.cell {
+h5.cell {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+div.cell {
   font-size: 0.875rem;
   line-height: 1.5;
 }
@@ -208,6 +217,14 @@ span.cell {
 .cell:last-child {
   border-right: 1px solid #E6E6E9;
 }
+.cell:focus {
+  border: 3px solid #c9f1e0;
+  box-shadow: inset 0px 0px 0px 2px #2AB168 !important;
+}
+
+.cell.selected {
+  box-shadow: inset 0px 0px 0px 2px #2AB168;
+}
 
 input {
   padding: 4px 16px;
@@ -216,6 +233,7 @@ input {
 }
 
 .toolbar {
+  display: flex;
   padding: 0 16px;
   margin-bottom: 16px;
 }
@@ -226,26 +244,97 @@ input {
   margin-right: 0;
 }
 
+.file-actions {
+  position: relative;
+}
+
 .file-button {
   margin-right: 64px;
   font-size: 1rem;
   font-weight: 500;
   line-height: 1.2;
   position: relative;
-  padding-right: 1em;
+  padding: 0.5em 1.5em 0.5em 0.5em;
 }
 .file-button:after {
   content: "";
   position: absolute;
-  top: 0.4em;
+  top: 1em;
   right: 0;
   width: 0;
   height: 0;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
-  border-top: 8px solid #828391;
+  border-top: 8px solid #2AB168;
+  border-radius: 2px;
+  margin-right: 0.5em;
+}
+.file-button:hover {
+  border-radius: 4px;
+  background-color: #F3F3F4;
 }
 
 .file-menu {
+  padding: 8px 0;
   display: none;
+  white-space: nowrap;
+  position: absolute;
+  left: 0;
+  top: 2em;
+  border: 1px solid #E6E6E9;
+  background-color: #fff;
+  box-shadow: 0px 0.33207px 0.6088px 0px rgba(61, 63, 79, 0.01), 0px 0.79801px 1.46302px 0px rgba(61, 63, 79, 0.01), 0px 1.50259px 2.75474px 0px rgba(61, 63, 79, 0.01), 0px 2.68036px 4.91399px 0px rgba(61, 63, 79, 0.02), 0px 5.01331px 9.19107px 0px rgba(61, 63, 79, 0.02), 0px 12px 22px 0px rgba(61, 63, 79, 0.03);
+  max-width: 25vw;
+}
+.file-menu ul li {
+  padding: 16px 32px;
+  cursor: pointer;
+}
+.file-menu ul li:hover {
+  background-color: rgba(243, 243, 244, 0.6);
+}
+.file-menu #file-save::before {
+  background-image: url("./assets/Save.svg");
+}
+.file-menu #file-create::before {
+  background-image: url("./assets/Add.svg");
+}
+.file-menu #file-upload::before {
+  background-image: url("./assets/Folder.svg");
+}
+.file-menu #file-save::before, .file-menu #file-create::before, .file-menu #file-upload::before {
+  content: "";
+  position: absolute;
+  top: 2.2px;
+  left: 0;
+  filter: brightness(0) invert(9%) sepia(9%) saturate(5220%) hue-rotate(202deg) brightness(87%) contrast(111%);
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 18px;
+  height: 18px;
+}
+.file-menu #file-upload {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.file-menu #file-upload input {
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  background: none;
+  visibility: hidden;
+  width: 100%;
+}
+.file-menu #file-upload input::-webkit-file-upload-button {
+  display: none;
+}
+.file-menu #file-save, .file-menu #file-create, .file-menu #file-upload {
+  position: relative;
+  padding-left: 26px;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.2;
 }
