@@ -130,8 +130,8 @@ input{
 
    ul{
       li{
-         padding:16px 32px;
          cursor: pointer;
+         padding:8px 24px;
 
          &:hover{
             background-color: rgba($color: $black-5, $alpha: .6);
@@ -157,11 +157,9 @@ input{
    #file-save::before, #file-create::before,#file-upload::before{
       content: "";
       position: absolute;
-      top: 2.2px;
+      top: 10px;
       left: 0;
       filter: brightness(0) invert(9%) sepia(9%) saturate(5220%) hue-rotate(202deg) brightness(87%) contrast(111%);
-
-
 
       background-repeat: no-repeat;
       background-size:contain;
@@ -169,9 +167,7 @@ input{
       height: 18px;
    }
 
-   #file-upload{
-      @include button-2;
-         cursor: pointer;
+   #file-create, #file-save, #file-upload{
       input{
          padding: 0;
          margin: 0;
@@ -180,20 +176,30 @@ input{
          background: none;
          visibility: hidden;     
          width: 100%;    
-         &::-webkit-file-upload-button {
-            display: none;
-          }
       }
-      
+   }
+
+   #file-upload{
+      input::-webkit-file-upload-button {
+         display: none;
+       }
    }
 
    #file-save, #file-create, #file-upload{
       position: relative;
-      padding-left: 26px;
       @include button-2;
-
+      cursor: pointer;
+       display: flex;
+      align-items: center;
+      padding:8px 24px;
 
    }
 
 
+}
+
+.error{
+   color: $red-01;
+   text-align: center;
+   margin-top: 2em;
 }

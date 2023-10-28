@@ -287,8 +287,8 @@ input {
   max-width: 25vw;
 }
 .file-menu ul li {
-  padding: 16px 32px;
   cursor: pointer;
+  padding: 8px 24px;
 }
 .file-menu ul li:hover {
   background-color: rgba(243, 243, 244, 0.6);
@@ -305,7 +305,7 @@ input {
 .file-menu #file-save::before, .file-menu #file-create::before, .file-menu #file-upload::before {
   content: "";
   position: absolute;
-  top: 2.2px;
+  top: 10px;
   left: 0;
   filter: brightness(0) invert(9%) sepia(9%) saturate(5220%) hue-rotate(202deg) brightness(87%) contrast(111%);
   background-repeat: no-repeat;
@@ -313,13 +313,7 @@ input {
   width: 18px;
   height: 18px;
 }
-.file-menu #file-upload {
-  font-size: 0.875rem;
-  font-weight: 400;
-  line-height: 1.2;
-  cursor: pointer;
-}
-.file-menu #file-upload input {
+.file-menu #file-create input, .file-menu #file-save input, .file-menu #file-upload input {
   padding: 0;
   margin: 0;
   border: none;
@@ -333,8 +327,17 @@ input {
 }
 .file-menu #file-save, .file-menu #file-create, .file-menu #file-upload {
   position: relative;
-  padding-left: 26px;
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.2;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 8px 24px;
+}
+
+.error {
+  color: #E45B4E;
+  text-align: center;
+  margin-top: 2em;
 }

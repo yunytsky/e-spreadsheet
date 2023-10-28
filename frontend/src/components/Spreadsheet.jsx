@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 const Spreadsheet = ({
@@ -6,28 +6,31 @@ const Spreadsheet = ({
   setSpreadsheet,
   selectedCell,
   setSelectedCell,
-  selectedCellValue,
   setSelectedCellValue,
   valueChanged,
   setValueChanged,
   setSelectedFormulaName
 }) => {
 
+  const [fetchError, setFetchError] = useState(false);
   //Fetch the spreadsheet
   useEffect(() => {
     const fetchData = async () => {
-      let res = await axios.get("http://localhost:3000/get-spreadsheet");
-      if (res.data.spreadsheet == undefined) {
-        res = await axios.post("http://localhost:3000/create-spreadsheet", {
-          cellsNum: 260,
-        });
+      try{
+        let res = await axios.get("http://localhost:3000/get-spreadsheet");
+        if (res.data.spreadsheet == undefined) {
+          res = await axios.post("http://localhost:3000/create-spreadsheet", {
+            cellsNum: 260,
+          });
+        }
+        setSpreadsheet(res.data.spreadsheet);
+      }catch(error){
+        console.log(error);
       }
-      setSpreadsheet(res.data.spreadsheet);
     };
 
     fetchData();
   }, []);
-
 
   //Cell handler functions
   const handleChangeCellValue = (event) => {
@@ -37,38 +40,40 @@ const Spreadsheet = ({
 
   const handleUpdateValue = async (event) => {
     window.onbeforeunload = undefined;
-    const newValue = event.target.innerText;
+    try{
+      const newValue = event.target.innerText;
 
-    if (valueChanged.changed) {
-      console.log(event.target.innerText)
-      let res = await axios.post("http://localhost:3000/set-value", {
-        cell: {
-          value: newValue,
-          address: {
-            col: valueChanged.id.slice(0, 1),
-            row: valueChanged.id.slice(1),
-          },
-        },
-      });
-
-      if(!res.data.success){
-        console.log("inner text", event.target.innerText)
-        res = await axios.post("http://localhost:3000/calculate-formula", {
-            cell: {
-              value: newValue,
-              address: {
-                col: valueChanged.id.slice(0, 1),
-                row: valueChanged.id.slice(1),
-              },
+      if (valueChanged.changed) {
+        let res = await axios.post("http://localhost:3000/set-value", {
+          cell: {
+            value: newValue,
+            address: {
+              col: valueChanged.id.slice(0, 1),
+              row: valueChanged.id.slice(1),
             },
-          });
-
-          document.getElementById(valueChanged.id).innerText = res.data.result;
-        }
+          },
+        });
+  
+        if(!res.data.success){
+          console.log("inner text", event.target.innerText)
+          res = await axios.post("http://localhost:3000/calculate-formula", {
+              cell: {
+                value: newValue,
+                address: {
+                  col: valueChanged.id.slice(0, 1),
+                  row: valueChanged.id.slice(1),
+                },
+              },
+            });
+  
+            document.getElementById(valueChanged.id).innerText = res.data.result;
+          }
+      }
+  
+      setValueChanged(false);
+    }catch(error){
+      console.log(error);
     }
-    
-    // Reset the userChanged flag after handling the change.
-    setValueChanged(false);
   };
 
   const handleMouseDown = (event) => {

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import axios, { spread } from "axios";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 
 const Toolbar = ({
@@ -17,10 +17,15 @@ const Toolbar = ({
   const [formulas, setFormulas] = useState([]);
   
   useEffect(() => {
+
     //Fetch formulas
     const fetchData = async () => {
-      let res = await axios.get("http://localhost:3000/formulas");
-      setFormulas(res.data.formulas);
+      try{
+        let res = await axios.get("http://localhost:3000/get-formulas");
+        setFormulas(res.data.formulas);
+      }catch(error){
+        console.log(error)
+      }
     };
 
     fetchData();
@@ -53,50 +58,63 @@ const Toolbar = ({
 
   //Menu functions
   const handleSave = async () => {
-    const rows = document.querySelectorAll(".row");
-    let cellsWithValues = [];
-
-    rows.forEach((row) => {
-      const cells = row.firstElementChild.childNodes;
-      cells.forEach((cell) => {
-        if (cell.nodeName == "DIV" && cell.textContent != "") {
-          cellsWithValues.push({
-            value: cell.textContent,
-            address: { col: cell.id.slice(0, 1), row: cell.id.slice(1) },
-          });
-        }
+    if(document.querySelector(".file-menu").style.display != "none"){
+      document.querySelector(".file-menu").style.display = "none";
+    }
+    try{
+      const rows = document.querySelectorAll(".row");
+      let cellsWithValues = [];
+  
+      rows.forEach((row) => {
+        const cells = row.firstElementChild.childNodes;
+        cells.forEach((cell) => {
+          if (cell.nodeName == "DIV" && cell.textContent != "") {
+            cellsWithValues.push({
+              value: cell.textContent,
+              address: { col: cell.id.slice(0, 1), row: cell.id.slice(1) },
+            });
+          }
+        });
       });
-    });
-
-    const res2 = await axios.post("http://localhost:3000/save-spreadsheet", {
-      cells: cellsWithValues,
-    });
-    const filename = "spreadsheet.json"; // Set your desired filename here
-
-    const res = await axios.get("http://localhost:3000/download", {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      responseType: "blob",
-    });
-    const url = window.URL.createObjectURL(new Blob([res.data]));
-    const link = document.createElement("a");
-    link.href = url;
-    if (typeof window.navigator.msSaveBlob === "function") {
-      window.navigator.msSaveBlob(res.data, filename);
-    } else {
-      link.setAttribute("download", filename);
-      document.body.appendChild(link);
-      link.click();
+  
+      const saveRes = await axios.post("http://localhost:3000/save-spreadsheet", {
+        cells: cellsWithValues,
+      });
+  
+      const filename = "spreadsheet.json";
+  
+      const res = await axios.get("http://localhost:3000/download-spreadsheet", {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        responseType: "blob",
+      });
+  
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      if (typeof window.navigator.msSaveBlob === "function") {
+        window.navigator.msSaveBlob(res.data, filename);
+      } else {
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+      }
+    }catch(error){
+      console.log(error);
     }
   };
 
-  const handleFileChange = async (event) => {
-    const selectedFile = event.target.files[0];
-
-    const formData = new FormData();
-    formData.append("file", selectedFile);
+  const handleFileUpload = async (event) => {
+    if(document.querySelector(".file-menu").style.display != "none"){
+      document.querySelector(".file-menu").style.display = "none";
+    }
     try {
+      const selectedFile = event.target.files[0];
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
       const res = await axios.post(
         "http://localhost:3000/upload-spreadsheet",
         formData,
@@ -114,15 +132,23 @@ const Toolbar = ({
     }
   };
 
-  const handleCreateSpreadsheet = async () => {
+  const handleCreateNew = async () => {
+    if(document.querySelector(".file-menu").style.display != "none"){
+      document.querySelector(".file-menu").style.display = "none";
+    }
+
     if (
       confirm(
         "Are you sure you want to create a new spreadsheet? If you haven't saved changes, the information will be lost."
       )
     ) {
-      const res = await axios.get("http://localhost:3000/new-spreadsheet");
-      console.log(res);
-      setSpreadsheet(res.data.spreadsheet);
+      try{
+        const res = await axios.get("http://localhost:3000/new-spreadsheet");
+        console.log(res);
+        setSpreadsheet(res.data.spreadsheet);
+      }catch(error){
+        console.log(error);
+      }
     }
   };
 
@@ -143,21 +169,11 @@ const Toolbar = ({
 
   const handleUpdateValue = async (event) => {
     window.onbeforeunload = undefined;
-    const newValue = event.target.value;
+    try{
+      const newValue = event.target.value;
 
-    if (valueChanged.changed) {
-      let res = await axios.post("http://localhost:3000/set-value", {
-        cell: {
-          value: newValue,
-          address: {
-            col: valueChanged.id.slice(0, 1),
-            row: valueChanged.id.slice(1),
-          },
-        },
-      });
-
-      if (!res.data.success) {
-        res = await axios.post("http://localhost:3000/calculate-formula", {
+      if (valueChanged.changed) {
+        let res = await axios.post("http://localhost:3000/set-value", {
           cell: {
             value: newValue,
             address: {
@@ -166,9 +182,23 @@ const Toolbar = ({
             },
           },
         });
-
-        document.getElementById(valueChanged.id).innerText = res.data.result;
+  
+        if (!res.data.success) {
+          res = await axios.post("http://localhost:3000/calculate-formula", {
+            cell: {
+              value: newValue,
+              address: {
+                col: valueChanged.id.slice(0, 1),
+                row: valueChanged.id.slice(1),
+              },
+            },
+          });
+  
+          document.getElementById(valueChanged.id).innerText = res.data.result;
+        }
       }
+    }catch(error){
+      console.log(error);
     }
   };
 
@@ -197,23 +227,35 @@ const Toolbar = ({
         <div className="file-menu">
           <ul>
             <li>
-              <button id="file-save" onClick={handleSave}>
+              <label htmlFor="file-save-input" id="file-save">
                 Save
-              </button>
+                <input
+                  type="button"
+                  name="file-save-input"
+                  id="file-save-input"
+                  onClick={handleSave}
+                />
+              </label>
             </li>
             <li>
-              <button id="file-create" onClick={handleCreateSpreadsheet}>
+              <label htmlFor="file-create-input" id="file-create">
                 Create new
-              </button>
+                <input
+                  type="button"
+                  name="file-create-input"
+                  id="file-create-input"
+                  onClick={handleCreateNew}
+                />
+              </label>
             </li>
             <li>
-              <label htmlFor="file-input" id="file-upload">
+              <label htmlFor="file-upload-input" id="file-upload">
                 Upload
                 <input
                   type="file"
-                  name="file-input"
-                  id="file-input"
-                  onChange={(e) => {handleFileChange(e)}}
+                  name="file-upload-input"
+                  id="file-upload-input"
+                  onChange={(e) => {handleFileUpload(e)}}
                 />
               </label>
             </li>

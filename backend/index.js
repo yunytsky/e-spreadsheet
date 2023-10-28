@@ -1,10 +1,9 @@
-//Imports, configs
+//Imports
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const app = express();
 const fs = require("fs");
-const path = require('path');
 
 //Storage configurations
 const storage = multer.diskStorage({
@@ -29,6 +28,7 @@ class Spreadsheet {
       this.cells = cells;
    }
    save(){
+
    }
    reset() {
       this.cells.forEach(cell => {
@@ -268,7 +268,7 @@ if (fs.existsSync('./public/spreadsheet.json')) {
    spreadsheet = new Spreadsheet(cells);
  }
 
- //Formulas
+//Formulas
 const formulas = [
   new Sum("SUM", "n-ary"),
   new Product("PROD", "n-ary"),
@@ -286,15 +286,14 @@ const formulas = [
   new integerDivision("DIV", "binary"),
 ];
 
-
 //Routes
 app.get("/get-spreadsheet", (req, res) => {
    if(spreadsheet){
-      res.json({spreadsheet: spreadsheet});
+      return res.status(200).json({spreadsheet: spreadsheet});
    }else{
-      res.json({spreadsheet: undefined});
+      return res.status(505).json({spreadsheet: undefined});
    }
-})
+});
 
 app.post("/create-spreadsheet", (req, res) => {
    //Rows
@@ -330,7 +329,26 @@ app.post("/create-spreadsheet", (req, res) => {
    //Create new spreadsheet
    spreadsheet = new Spreadsheet(cells);
    res.redirect("/get-spreadsheet")
-})
+});
+
+
+app.post("/set-value", (req ,res) => {
+   if(req.body.cell.value.startsWith("=")){
+      return res.status(200).json({success: false, message: "Value is a formula"});
+   }
+
+   spreadsheet.cells.forEach(prevCell => {
+      if(prevCell.address.row == req.body.cell.address.row && prevCell.address.col == req.body.cell.address.col){
+         prevCell.setValue(req.body.cell.value);
+      }
+   });
+
+   const writeStream = fs.createWriteStream("./public/spreadsheet.json");
+   writeStream.write(JSON.stringify(spreadsheet));
+   writeStream.end();
+
+   return res.status(200).json({success: true});
+});
 
 app.post("/save-spreadsheet", (req, res) => {
    req.body.cells.forEach(cell => {
@@ -344,28 +362,12 @@ app.post("/save-spreadsheet", (req, res) => {
    const writeStream = fs.createWriteStream("./public/spreadsheet.json");
    writeStream.write(JSON.stringify(spreadsheet));
    writeStream.end();
-   res.json({data: "data"})
-})
 
-app.post("/set-value", (req ,res) => {
-   if(req.body.cell.value.startsWith("=")){
-      return res.json({success: false})
-   }
-   spreadsheet.cells.forEach(prevCell => {
-      if(prevCell.address.row == req.body.cell.address.row && prevCell.address.col == req.body.cell.address.col){
-         prevCell.setValue(req.body.cell.value);
-      }
-   });
+   return res.status(200).json({success: true});
+});
 
-   const writeStream = fs.createWriteStream("./public/spreadsheet.json");
-   writeStream.write(JSON.stringify(spreadsheet));
-   writeStream.end();
-
-   return res.json({success: true});
-})
-
-app.get('/download', (req, res)=>{
-   res.download("./public/spreadsheet.json");
+app.get('/download-spreadsheet', (req, res)=>{
+   return res.download("./public/spreadsheet.json");
  });
 
 app.post("/upload-spreadsheet", upload.single("file"), (req, res) => {
@@ -382,9 +384,8 @@ app.post("/upload-spreadsheet", upload.single("file"), (req, res) => {
      cells.push(cell);
    });
    spreadsheet = new Spreadsheet(cells);
-  res.redirect("/get-spreadsheet");
-
-})
+   return res.status(200).json({spreadsheet: spreadsheet});
+});
 
 app.post("/calculate-formula", (req, res) => {
    // Regular expression pattern to match cell range (A1:B1)
@@ -445,7 +446,7 @@ app.post("/calculate-formula", (req, res) => {
 
    return res.json({result: operationResult});
    
-})
+});
 
 app.get("/new-spreadsheet", (req, res) => {
    spreadsheet.reset();
@@ -454,20 +455,17 @@ app.get("/new-spreadsheet", (req, res) => {
    writeStream.write(JSON.stringify(spreadsheet));
    writeStream.end();
    
-   res.json({spreadsheet: spreadsheet})
-})
+   return res.status(200).json({spreadsheet: spreadsheet})
+});
 
-app.get("/formulas",(req, res) => {
-   res.json({formulas: formulas});
-})
-
-// app.post("/set-cell", (req, res) => {
-//    const cell = new Cell(req.body.value);
-//    console.log(cell)
-// })
-
-
+app.get("/get-formulas",(req, res) => {
+   if(formulas){
+      return  res.status(200).json({formulas: formulas});
+   }else{
+      return res.status(505).json({formulas: undefined, message: "Couldn't get formulas"})
+   }
+});
 
 app.listen(3000, () => {
-   console.log("App is listening on PORT", 3000)
+   console.log("App is listening on PORT", 3000);
 });

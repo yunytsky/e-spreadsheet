@@ -37,7 +37,6 @@ const App = () => {
          setSpreadsheet={setSpreadsheet}
          selectedCell={selectedCell}
          setSelectedCell={setSelectedCell}
-         selectedCellValue={selectedCellValue}
          setSelectedCellValue={setSelectedCellValue}
          valueChanged={valueChanged}
          setValueChanged={setValueChanged}
