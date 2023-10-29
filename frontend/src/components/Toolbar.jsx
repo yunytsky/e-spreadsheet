@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+import functionLogo from "../assets/fx.svg"
 
 const Toolbar = ({
   spreadsheet,
@@ -215,89 +216,109 @@ const Toolbar = ({
 
   return (
     <div className="toolbar">
-      <div className="file-actions">
-        <button
-          className="file-button"
-          onClick={(e) => {
-            toggleMenu(e);
-          }}
-        >
-          File
-        </button>
-        <div className="file-menu">
-          <ul>
-            <li>
-              <label htmlFor="file-save-input" id="file-save">
-                Save
-                <input
-                  type="button"
-                  name="file-save-input"
-                  id="file-save-input"
-                  onClick={handleSave}
-                />
-              </label>
-            </li>
-            <li>
-              <label htmlFor="file-create-input" id="file-create">
-                Create new
-                <input
-                  type="button"
-                  name="file-create-input"
-                  id="file-create-input"
-                  onClick={handleCreateNew}
-                />
-              </label>
-            </li>
-            <li>
-              <label htmlFor="file-upload-input" id="file-upload">
-                Upload
-                <input
-                  type="file"
-                  name="file-upload-input"
-                  id="file-upload-input"
-                  onChange={(e) => {handleFileUpload(e)}}
-                />
-              </label>
-            </li>
-          </ul>
+      <div className="toolbar-top">
+        <div className="file-actions">
+          <button
+            className="file-button"
+            onClick={(e) => {
+              toggleMenu(e);
+            }}
+          >
+            File
+          </button>
+          <div className="file-menu">
+            <ul>
+              <li>
+                <label htmlFor="file-save-input" id="file-save">
+                  Save
+                  <input
+                    type="button"
+                    name="file-save-input"
+                    id="file-save-input"
+                    onClick={handleSave}
+                  />
+                </label>
+              </li>
+              <li>
+                <label htmlFor="file-create-input" id="file-create">
+                  Create new
+                  <input
+                    type="button"
+                    name="file-create-input"
+                    id="file-create-input"
+                    onClick={handleCreateNew}
+                  />
+                </label>
+              </li>
+              <li>
+                <label htmlFor="file-upload-input" id="file-upload">
+                  Upload
+                  <input
+                    type="file"
+                    name="file-upload-input"
+                    id="file-upload-input"
+                    onChange={(e) => {
+                      handleFileUpload(e);
+                    }}
+                  />
+                </label>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="help-actions">
+          <button className="help-button">Help</button>
+          <div className="help-window">
+            <div className="help-window-nav">
+              <button>Operation</button><button>Operation</button><button>Operation</button>
+            </div>
+            <help className="window-info">
+              <span>Info</span><span>Info</span><span>Info</span>
+            </help>
+          </div>         
         </div>
       </div>
-
-      <label htmlFor="function"></label>
-      <select
-        name="select-function"
-        id="select-function"
-        onChange={(e) => {
-          handleSelectFormula(e);
-        }}
-      >
-        <option label="" value=""></option>
-        {formulas &&
-          formulas.map((formula, index) => (
-            <option value={formula.name} label={formula.name} key={index}>
-              {formula.name}
-            </option>
-          ))}
-      </select>
-      <label htmlFor="cell-value"></label>
-      <input
-        type="text"
-        name="cell-value"
-        value={
-          selectedFormulaName
-            ? "=" + selectedFormulaName + "(:)"
-            : selectedCellValue
-        }
-        id={selectedCell.id}
-        onInput={(e) => {
-          handleChangeCellValue(e);
-        }}
-        onBlur={(e) => {
-          handleUpdateValue(e);
-        }}
-        onFocus={handleInputFocus}
-        suppressContentEditableWarning={true}
-      />
+      <div className="toolbar-bottom">
+        <label className="function-label" htmlFor="select-function">
+          <img src={functionLogo} alt="Fx" />
+        </label>
+        <select
+          name="select-function"
+          id="select-function"
+          onChange={(e) => {
+            handleSelectFormula(e);
+          }}
+        >
+          <option label="" value=""></option>
+          {formulas &&
+            formulas.map((formula, index) => (
+              <option value={formula.name} label={formula.name} key={index}>
+                {formula.name}
+              </option>
+            ))}
+        </select>
+        <label htmlFor="cell-value"></label>
+        <input
+          autoComplete="off"
+          type="text"
+          name="cell-value"
+          className="cell-value-input"
+          value={
+            selectedFormulaName
+              ? "=" + selectedFormulaName + "(:)"
+              : selectedCellValue
+          }
+          id={selectedCell.id}
+          onInput={(e) => {
+            handleChangeCellValue(e);
+          }}
+          onBlur={(e) => {
+            handleUpdateValue(e);
+          }}
+          onFocus={handleInputFocus}
+          suppressContentEditableWarning={true}
+        />
+      </div>
     </div>
   );
 };

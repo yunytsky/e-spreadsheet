@@ -27,8 +27,10 @@ class Spreadsheet {
    constructor(cells){
       this.cells = cells;
    }
-   save(){
-
+   saveIntoFile(){
+      const writeStream = fs.createWriteStream("./public/spreadsheet.json");
+      writeStream.write(JSON.stringify(this));
+      writeStream.end();
    }
    reset() {
       this.cells.forEach(cell => {
@@ -61,11 +63,13 @@ class Address{
 
 class Formula{
    constructor(name, type){
+      if (this.constructor == Formula) {
+         throw new Error("Abstract classes can't be instantiated.");
+       }
       this.name = name;
-      this.format = new RegExp(`^=SUM\\(${this.name}[A-Z]{1,3}\\d{1,}: [A-Z]{1,3}\\d{1,}\\)$`);
       this.type = type;
    }
-
+   
    checkValidity(cellsValues) {
       let isValid = true;
 
@@ -89,6 +93,10 @@ class Formula{
       }
 
       return isValid;
+   }
+
+   calculate(){
+      throw new Error("Method 'calculate()' must be implemented.");
    }
 }
 
@@ -331,7 +339,6 @@ app.post("/create-spreadsheet", (req, res) => {
    res.redirect("/get-spreadsheet")
 });
 
-
 app.post("/set-value", (req ,res) => {
    if(req.body.cell.value.startsWith("=")){
       return res.status(200).json({success: false, message: "Value is a formula"});
@@ -359,9 +366,7 @@ app.post("/save-spreadsheet", (req, res) => {
       })
    })
 
-   const writeStream = fs.createWriteStream("./public/spreadsheet.json");
-   writeStream.write(JSON.stringify(spreadsheet));
-   writeStream.end();
+   spreadsheet.saveIntoFile();
 
    return res.status(200).json({success: true});
 });
@@ -388,9 +393,20 @@ app.post("/upload-spreadsheet", upload.single("file"), (req, res) => {
 });
 
 app.post("/calculate-formula", (req, res) => {
-   // Regular expression pattern to match cell range (A1:B1)
+   const formulaName = req.body.cell.value.split("=")[1].split("(")[0];
+   let formulaIndex;
+
+   formulas.forEach((formula, index) => {
+      if(formula.name == formulaName){
+        formulaIndex = index;
+      }
+   })
+   //check if there's even such a formula
+
+
+   // Regular expression pattern to match cell range i.e. (A1:B1)
    const regexPattern = /\b([A-Z]+\d+:[A-Z]+\d+)\b/g;
-   // Extract cell range using regular expression
+   // Extract cell range
    const match = regexPattern.exec(req.body.cell.value);
    const cellRange = match ? match[1] : null;
 
@@ -403,15 +419,16 @@ app.post("/calculate-formula", (req, res) => {
    const rowStart = rangeStart.slice(1);
    const rowEnd = rangeEnd.slice(1);
 
-   const colToNumber = col => col.charCodeAt(0) - 65; // Convert column letter to number (A=0, B=1, ..., Z=25)
+   // Convert column letter to number (A=0, B=1, ..., Z=25)
+   const colToNumber = col => col.charCodeAt(0) - 65;
    const colStartNumber = colToNumber(colStart);
    const colEndNumber = colToNumber(colEnd);
+   
 
    const cells = spreadsheet.cells.filter(cell => cell.address.row >= rowStart && cell.address.row <= rowEnd).filter((cell) => {
       const cellColNumber = colToNumber(cell.address.col);
       return cellColNumber >= colStartNumber && cellColNumber <= colEndNumber;
     });
-
     const values = cells.map(cell => {
       if(cell.value === null || cell.value === ""){
          return 0;
@@ -419,15 +436,6 @@ app.post("/calculate-formula", (req, res) => {
          return parseFloat(cell.value);
       }
    });
-
-    const formulaName = req.body.cell.value.split("=")[1].split("(")[0];
-    let formulaIndex;
-
-    formulas.forEach((formula, index) => {
-      if(formula.name == formulaName){
-        formulaIndex = index;
-      }
-    })
 
    if(!formulas[formulaIndex].checkValidity(values)){
       return res.json({result: "Invalid values"});
@@ -440,9 +448,7 @@ app.post("/calculate-formula", (req, res) => {
       }
    });
 
-   const writeStream = fs.createWriteStream("./public/spreadsheet.json");
-   writeStream.write(JSON.stringify(spreadsheet));
-   writeStream.end();
+   spreadsheet.saveIntoFile();
 
    return res.json({result: operationResult});
    
@@ -450,11 +456,7 @@ app.post("/calculate-formula", (req, res) => {
 
 app.get("/new-spreadsheet", (req, res) => {
    spreadsheet.reset();
-
-   const writeStream = fs.createWriteStream("./public/spreadsheet.json");
-   writeStream.write(JSON.stringify(spreadsheet));
-   writeStream.end();
-   
+   spreadsheet.saveIntoFile();
    return res.status(200).json({spreadsheet: spreadsheet})
 });
 
