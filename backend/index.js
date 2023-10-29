@@ -4,6 +4,26 @@ const cors = require("cors");
 const multer = require("multer");
 const app = express();
 const fs = require("fs");
+//Classes
+const Spreadsheet = require("./classes/Spreadsheet.js");
+const Cell = require("./classes/Cell.js");
+const Address = require("./classes/Address.js");
+const Formula = require("./classes/Formula.js");
+const Sum = require("./classes/Sum.js");
+const Difference = require("./classes/Difference.js");
+const Fraction = require("./classes/Fraction.js");
+const Product = require("./classes/Product.js");
+const Max = require("./classes/Max.js");
+const Min = require("./classes/Min.js");
+const Modulus = require("./classes/Modulus.js");
+const integerDivision = require("./classes/integerDivision.js");
+const Equals = require("./classes/Equals.js");
+const Greater = require("./classes/Greater.js");
+const Less = require("./classes/Greater.js");
+const GreaterOrEqual = require("./classes/Greater.js");
+const LessOrEqual = require("./classes/Greater.js");
+const NotEqual = require("./classes/Greater.js");
+
 
 //Storage configurations
 const storage = multer.diskStorage({
@@ -22,239 +42,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-//Classes
-class Spreadsheet {
-   constructor(cells){
-      this.cells = cells;
-   }
-   saveIntoFile(){
-      const writeStream = fs.createWriteStream("./public/spreadsheet.json");
-      writeStream.write(JSON.stringify(this));
-      writeStream.end();
-   }
-   reset() {
-      this.cells.forEach(cell => {
-         cell.setValue(null);
-      })
-   }
-}
-
-class Cell {
-   constructor(value, address){
-      this.value = value;
-      this.address = address; //required
-   }
-
-   getValue(){
-      return this.value;
-   }
-
-   setValue(value){
-      this.value = value;
-   }
-}
-
-class Address{
-   constructor(col, row) {
-      this.col = col;
-      this.row = row;
-   }
-}
-
-class Formula{
-   constructor(name, type){
-      if (this.constructor == Formula) {
-         throw new Error("Abstract classes can't be instantiated.");
-       }
-      this.name = name;
-      this.type = type;
-   }
-   
-   checkValidity(cellsValues) {
-      let isValid = true;
-
-      if(this.type == "binary" && cellsValues.length != 2){
-         isValid = false;
-         return isValid;
-      }
-
-      if(this.name === "FRAC" || this.name === "DIV" || this.name === "MOD") {
-         if(cellsValues[1] === 0){
-            isValid = false;
-            return isValid;
-         }
-      }
-
-      for(let i = 0; i<cellsValues.length; i++){
-         if(isNaN(cellsValues[i])){
-            isValid = false;
-            return;
-         }
-      }
-
-      return isValid;
-   }
-
-   calculate(){
-      throw new Error("Method 'calculate()' must be implemented.");
-   }
-}
-
-class Sum extends Formula{
-   calculate(cellsValues) {
-      let result = 0;
-
-      cellsValues.forEach(value => {
-         result = result + value;
-      })
-
-      return result;
-   }
-}
-
-class Product extends Formula{
-   calculate(cellsValues) {
-      let result = 1;
-
-      cellsValues.forEach(value => {
-         result = result * value;
-      })
-
-      return result;
-   }
-}
-
-class Difference extends Formula{
-   calculate(cellsValues) {
-      let result = 0;
-
-      result = cellsValues[0]-cellsValues[1]
-
-      return result;
-   }
-}
-
-class Fraction extends Formula{
-   calculate(cellsValues) {
-      let result = 0;
-
-      if(cellsValues[1] === 0){
-         //return invalid
-      }
-      result = cellsValues[0]/cellsValues[1]
-
-      return result;
-   }
-}
-
-class Max extends Formula{
-   calculate(cellsValues) {
-      let result = 0;
-
-      result = Math.max(...cellsValues);
-      return result;
-   }
-}
-
-class Min extends Formula{
-   calculate(cellsValues) {
-      let result = 0;
-
-      result = Math.min(...cellsValues);
-
-      return result;
-   }
-}
-
-class Modulus extends Formula{
-   calculate(cellsValues) {
-      let result = 0;
-
-      result = cellsValues[0]%cellsValues[1]
-
-      return result;
-   }
-}
-
-class integerDivision extends Formula {
-   calculate(cellsValues){
-      let result = 0;
-      result = Math.floor(cellsValues[0]/cellsValues[1]);
-      return result;
-   }
-}
-
-class Equals extends Formula{
-   calculate(cellsValues){
-      let result = 0;
-
-      if(cellsValues[0] === cellsValues[1]){
-         result = 1;
-      }
-
-      return result;
-   }
-}
-
-class Greater extends Formula {
-   calculate(cellsValues){
-      let result = 0;
-
-      if(cellsValues[0] > cellsValues [1]){
-         result = 1;
-      }
-
-      return result;
-   }
-}
-
-class Less extends Formula {
-   calculate(cellsValues){
-      let result = 0;
-
-      if(cellsValues[0] < cellsValues [1]){
-         result = 1;
-      }
-
-      return resultvalues;
-   }
-}
-
-class GreaterOrEqual extends Formula {
-   calculate(cellsValues){
-      let result = 0;
-
-      if(cellsValues[0] >= cellsValues[1]){
-         result = 1;
-      }
-
-      return result;
-   }
-}
-
-class LessOrEqual extends Formula {
-   calculate(cellsValues){
-      let result = 0;
-
-      if(cellsValues[0] <= cellsValues[1]){
-         result = 1;
-      }
-
-      return result;
-   }
-}
-
-class NotEqual extends Formula {
-   calculate(cellsValues){
-      let result = 0;
-
-      if(cellsValues[0] !== cellsValues[1]){
-         result = 1;
-      }
-
-      return result;
-   }
-}
 
 //Global spreadsheet object
 let spreadsheet;
