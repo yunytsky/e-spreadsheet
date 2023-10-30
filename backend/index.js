@@ -42,12 +42,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-
 //Global spreadsheet object
 let spreadsheet;
 
 if (fs.existsSync('./public/spreadsheet.json')) {
-   console.log('The file exists.')
    const fileContent = fs.readFileSync('./public/spreadsheet.json', 'utf8');
    const jsonObject = JSON.parse(fileContent);
    let cells = [];
@@ -86,11 +84,12 @@ app.get("/get-spreadsheet", (req, res) => {
    if(spreadsheet){
       return res.status(200).json({spreadsheet: spreadsheet});
    }else{
-      return res.status(505).json({spreadsheet: undefined});
+      return res.status(200).json({spreadsheet: undefined});
    }
 });
 
 app.post("/create-spreadsheet", (req, res) => {
+
    //Rows
    const rows = [];
    for(let i = 1; i <= 100; i++){
@@ -116,6 +115,7 @@ app.post("/create-spreadsheet", (req, res) => {
    const cells = [];
    addresses.forEach(set => {
       set.forEach(address => {
+
          const cell = new Cell(null, address);
          cells.push(cell);
       })
@@ -123,7 +123,8 @@ app.post("/create-spreadsheet", (req, res) => {
 
    //Create new spreadsheet
    spreadsheet = new Spreadsheet(cells);
-   res.redirect("/get-spreadsheet")
+   return res.status(200).json({spreadsheet: spreadsheet});
+
 });
 
 app.post("/set-value", (req ,res) => {
@@ -132,14 +133,15 @@ app.post("/set-value", (req ,res) => {
    }
 
    spreadsheet.cells.forEach(prevCell => {
-      if(prevCell.address.row == req.body.cell.address.row && prevCell.address.col == req.body.cell.address.col){
+      if(prevCell.getAddress().row == req.body.cell.address.row && prevCell.getAddress().col == req.body.cell.address.col){
          prevCell.setValue(req.body.cell.value);
       }
    });
 
-   const writeStream = fs.createWriteStream("./public/spreadsheet.json");
-   writeStream.write(JSON.stringify(spreadsheet));
-   writeStream.end();
+   const saveResult = spreadsheet.saveIntoFile();
+   if(!saveResult) {
+      return res.status(505).json({success: false});
+   }
 
    return res.status(200).json({success: true});
 });
@@ -147,15 +149,19 @@ app.post("/set-value", (req ,res) => {
 app.post("/save-spreadsheet", (req, res) => {
    req.body.cells.forEach(cell => {
       spreadsheet.cells.forEach(prevCell => {
-         if(prevCell.address.row == cell.address.row && prevCell.address.col == cell.address.col){
+         if(prevCell.getAddress().row == cell.address.row && prevCell.getAddress().col == cell.address.col){
             prevCell.setValue(cell.value);
          }
       })
    })
 
-   spreadsheet.saveIntoFile();
+   const saveResult = spreadsheet.saveIntoFile();
+   if(!saveResult) {
+      return res.status(505).json({success: false});
+   }
 
    return res.status(200).json({success: true});
+
 });
 
 app.get('/download-spreadsheet', (req, res)=>{
@@ -165,6 +171,11 @@ app.get('/download-spreadsheet', (req, res)=>{
 app.post("/upload-spreadsheet", upload.single("file"), (req, res) => {
    const fileContent = fs.readFileSync(req.file.path, 'utf8');
    const jsonObject = JSON.parse(fileContent);
+   //Check if the data is valid
+   if(!jsonObject.cells){
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({spreadsheet: undefined, message: "Invalid data"});
+   }
    let cells = [];
    jsonObject.cells.forEach((cellObject) => {
      const address = new Address(
@@ -188,8 +199,6 @@ app.post("/calculate-formula", (req, res) => {
         formulaIndex = index;
       }
    })
-   //check if there's even such a formula
-
 
    // Regular expression pattern to match cell range i.e. (A1:B1)
    const regexPattern = /\b([A-Z]+\d+:[A-Z]+\d+)\b/g;
@@ -212,15 +221,15 @@ app.post("/calculate-formula", (req, res) => {
    const colEndNumber = colToNumber(colEnd);
    
 
-   const cells = spreadsheet.cells.filter(cell => cell.address.row >= rowStart && cell.address.row <= rowEnd).filter((cell) => {
-      const cellColNumber = colToNumber(cell.address.col);
+   const cells = spreadsheet.cells.filter(cell => cell.getAddress().row >= rowStart && cell.getAddress().row <= rowEnd).filter((cell) => {
+      const cellColNumber = colToNumber(cell.getAddress().col);
       return cellColNumber >= colStartNumber && cellColNumber <= colEndNumber;
     });
     const values = cells.map(cell => {
-      if(cell.value === null || cell.value === ""){
+      if(cell.getValue() === null || cell.getValue() === ""){
          return 0;
       }else{
-         return parseFloat(cell.value);
+         return parseFloat(cell.getValue());
       }
    });
 
@@ -230,21 +239,27 @@ app.post("/calculate-formula", (req, res) => {
 
    const operationResult = formulas[formulaIndex].calculate(values);
    spreadsheet.cells.forEach(prevCell => {
-      if(prevCell.address.row == req.body.cell.address.row && prevCell.address.col == req.body.cell.address.col){
+      if(prevCell.getAddress().row == req.body.cell.address.row && prevCell.getAddress().col == req.body.cell.address.col){
          prevCell.setValue(operationResult);
       }
    });
 
-   spreadsheet.saveIntoFile();
+   const saveResult = spreadsheet.saveIntoFile();
+   if(!saveResult) {
+      return res.status(505).json({success: false});
+   }
 
-   return res.json({result: operationResult});
+   return res.status(200).json({success: true, result: operationResult});
    
 });
 
 app.get("/new-spreadsheet", (req, res) => {
    spreadsheet.reset();
-   spreadsheet.saveIntoFile();
-   return res.status(200).json({spreadsheet: spreadsheet})
+   const saveResult = spreadsheet.saveIntoFile();
+   if(!saveResult) {
+      return res.status(505).json({success: false});
+   }
+   return res.status(200).json({success: true, spreadsheet: spreadsheet})
 });
 
 app.get("/get-formulas",(req, res) => {

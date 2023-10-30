@@ -129,7 +129,7 @@ const Toolbar = ({
       setSpreadsheet(res.data.spreadsheet);
       event.target.value = null;
     } catch (error) {
-      console.error("Error uploading file: ", error);
+      alert(error.response.data.message);
     }
   };
 
@@ -145,8 +145,11 @@ const Toolbar = ({
     ) {
       try{
         const res = await axios.get("http://localhost:3000/new-spreadsheet");
-        console.log(res);
         setSpreadsheet(res.data.spreadsheet);
+        const cells = document.querySelectorAll("div.cell");
+        cells.forEach(cell => {
+          cell.innerText = "";
+        })
       }catch(error){
         console.log(error);
       }
@@ -255,6 +258,7 @@ const Toolbar = ({
                   Upload
                   <input
                     type="file"
+                    accept="application/json"
                     name="file-upload-input"
                     id="file-upload-input"
                     onChange={(e) => {
@@ -272,9 +276,9 @@ const Toolbar = ({
             <div className="help-window-nav">
               <button>Operation</button><button>Operation</button><button>Operation</button>
             </div>
-            <help className="window-info">
+            <div className="window-info">
               <span>Info</span><span>Info</span><span>Info</span>
-            </help>
+            </div>
           </div>         
         </div>
       </div>

@@ -31,7 +31,7 @@ class Formula{
  
        return isValid;
     }
- 
+    
     calculate(){
        throw new Error("Method 'calculate()' must be implemented.");
     }
