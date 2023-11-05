@@ -4,7 +4,6 @@ import axios from "axios";
 import functionLogo from "../assets/fx.svg"
 
 const Toolbar = ({
-  spreadsheet,
   setSpreadsheet,
   selectedCell,
   selectedCellValue,

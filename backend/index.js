@@ -24,6 +24,9 @@ const GreaterOrEqual = require("./classes/Greater.js");
 const LessOrEqual = require("./classes/Greater.js");
 const NotEqual = require("./classes/Greater.js");
 
+//Global variables
+const NUM_ALPHABETS = 26;
+const ASCII_UPPERCASE_A = 65;
 
 //Storage configurations
 const storage = multer.diskStorage({
@@ -97,7 +100,7 @@ app.post("/create-spreadsheet", (req, res) => {
    }
 
    //Cols
-   const alphabetNum = Array.from(Array(26)).map((e, i) => i + 65);
+   const alphabetNum = Array.from(Array(NUM_ALPHABETS)).map((e, i) => i + ASCII_UPPERCASE_A);
    const cols = alphabetNum.map(e => String.fromCharCode(e));
 
 
@@ -270,6 +273,9 @@ app.get("/get-formulas",(req, res) => {
    }
 });
 
-app.listen(3000, () => {
+
+//Server
+const PORT = 3000;
+app.listen(PORT, () => {
    console.log("App is listening on PORT", 3000);
 });
