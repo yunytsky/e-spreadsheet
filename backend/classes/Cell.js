@@ -1,20 +1,29 @@
 class Cell {
-    constructor(value, address){
-       this.value = value;
-       this.address = address;
-    }
- 
-    getValue(){
-       return this.value;
-    }
- 
-    setValue(value){
-       this.value = value;
-    }
-     
-    getAddress(){
-      return this.address;
-   }
- }
+  constructor(value, formula, address) {
+    this.value = value;
+    this.formula = formula;
+    this.address = address;
+  }
 
- module.exports = Cell;
+  getValue() {
+    return this.value;
+  }
+
+  setValue(value) {
+    this.value = value;
+  }
+
+  getFormula() {
+    return this.formula;
+  }
+
+  setFormula(formula) {
+    this.formula = formula;
+  }
+
+  getAddress() {
+    return this.address;
+  }
+}
+
+module.exports = Cell;

@@ -27,6 +27,8 @@ const NotEqual = require("./classes/Greater.js");
 //Global variables
 const NUM_ALPHABETS = 26;
 const ASCII_UPPERCASE_A = 65;
+const ASCII_ALPHABET  = Array.from(Array(NUM_ALPHABETS)).map((e, i) => i + ASCII_UPPERCASE_A);
+const ALPHABET = ASCII_ALPHABET .map(e => String.fromCharCode(e));
 
 //Storage configurations
 const storage = multer.diskStorage({
@@ -58,7 +60,8 @@ if (fs.existsSync('./public/spreadsheet.json')) {
        cellObject.address.row
      );
      const value = cellObject.value;
-     const cell = new Cell(value, address);
+     const formula = cellObject.formula;
+     const cell = new Cell(value, formula, address);
      cells.push(cell);
    });
    spreadsheet = new Spreadsheet(cells);
@@ -100,9 +103,8 @@ app.post("/create-spreadsheet", (req, res) => {
    }
 
    //Cols
-   const alphabetNum = Array.from(Array(NUM_ALPHABETS)).map((e, i) => i + ASCII_UPPERCASE_A);
-   const cols = alphabetNum.map(e => String.fromCharCode(e));
-
+   const cols = ALPHABET;
+   
 
    //Addresses
    const addresses = rows.map((row) => {
@@ -118,8 +120,7 @@ app.post("/create-spreadsheet", (req, res) => {
    const cells = [];
    addresses.forEach(set => {
       set.forEach(address => {
-
-         const cell = new Cell(null, address);
+         const cell = new Cell(null, null, address);
          cells.push(cell);
       })
    });
@@ -186,7 +187,9 @@ app.post("/upload-spreadsheet", upload.single("file"), (req, res) => {
        cellObject.address.row
      );
      const value = cellObject.value;
-     const cell = new Cell(value, address);
+     const formula = cellObject.formula;
+
+     const cell = new Cell(value, formula, address);
      cells.push(cell);
    });
    spreadsheet = new Spreadsheet(cells);
@@ -194,66 +197,115 @@ app.post("/upload-spreadsheet", upload.single("file"), (req, res) => {
 });
 
 app.post("/calculate-formula", (req, res) => {
-   const formulaName = req.body.cell.value.split("=")[1].split("(")[0];
-   let formulaIndex;
+  let rangeError = false;
 
-   formulas.forEach((formula, index) => {
-      if(formula.name == formulaName){
-        formulaIndex = index;
-      }
-   })
+  const formulaName = req.body.cell.value.split("=")[1].split("(")[0];
+  let formulaIndex = null;
 
-   // Regular expression pattern to match cell range i.e. (A1:B1)
-   const regexPattern = /\b([A-Z]+\d+:[A-Z]+\d+)\b/g;
-   // Extract cell range
-   const match = regexPattern.exec(req.body.cell.value);
-   const cellRange = match ? match[1] : null;
+  formulas.forEach((formula, index) => {
+    if (formula.name == formulaName) {
+      formulaIndex = index;
+    }
+  });
 
-   const rangeStart = cellRange.split(":")[0];
-   const rangeEnd = cellRange.split(":")[1];
+  //Check if formula exists
+  if(formulaIndex === null){
+   return res.json({ result: "Invalid formula" });
+  }
 
-   const colStart = rangeStart.slice(0, 1)
-   const colEnd = rangeEnd.slice(0, 1);
+  // Regular expression pattern to match cell range i.e. (A1:B1)
+  const regexPattern = /\b([A-Z]+\d+:[A-Z]+\d+)\b/g;
+  // Extract cell range
+  const match = regexPattern.exec(req.body.cell.value);
+  const cellRange = match ? match[1] : null;
 
-   const rowStart = rangeStart.slice(1);
-   const rowEnd = rangeEnd.slice(1);
+   //Validate range (col)
+   if(cellRange === null){
+      rangeError = true;
+      return res.json({ result: "Invalid range" });
+   }
 
-   // Convert column letter to number (A=0, B=1, ..., Z=25)
-   const colToNumber = col => col.charCodeAt(0) - 65;
-   const colStartNumber = colToNumber(colStart);
-   const colEndNumber = colToNumber(colEnd);
-   
+  const rangeStart = cellRange.split(":")[0];
+  const rangeEnd = cellRange.split(":")[1];
+  const colStart = rangeStart.slice(0, 1);
+  const colEnd = rangeEnd.slice(0, 1);
 
-   const cells = spreadsheet.cells.filter(cell => cell.getAddress().row >= rowStart && cell.getAddress().row <= rowEnd).filter((cell) => {
+  const rowStart = rangeStart.slice(1);
+  const rowEnd = rangeEnd.slice(1);
+
+  const numSpreadsheetRows = spreadsheet.cells.length/NUM_ALPHABETS;
+
+
+  //Validate range (row)
+  if(rowEnd < rowStart){
+   rangeError = true;
+  }else if(rowEnd <= 0 || rowStart <= 0){
+   rangeError = true;
+  }else if(rowEnd > numSpreadsheetRows || rowStart > numSpreadsheetRows){
+   rangeError = true;
+  }
+
+  // Convert column letter to number (A=0, B=1, ..., Z=25)
+  const colToNumber = (col) => col.charCodeAt(0) - ASCII_UPPERCASE_A;
+  const colStartNumber = colToNumber(colStart);
+  const colEndNumber = colToNumber(colEnd);
+
+  const cells = spreadsheet.cells
+    .filter(
+      (cell) =>
+        cell.getAddress().row >= rowStart && cell.getAddress().row <= rowEnd
+    )
+    .filter((cell) => {
       const cellColNumber = colToNumber(cell.getAddress().col);
       return cellColNumber >= colStartNumber && cellColNumber <= colEndNumber;
     });
-    const values = cells.map(cell => {
-      if(cell.getValue() === null || cell.getValue() === ""){
-         return 0;
-      }else{
-         return parseFloat(cell.getValue());
-      }
-   });
 
-   if(!formulas[formulaIndex].checkValidity(values)){
-      return res.json({result: "Invalid values"});
-   }
+  //Check if a cell the formula set in is included in the range
+  for (let i = 0; i < cells.length; i++) {
+    const cell = cells[i];
+    if (
+      String(cell.address.row) === req.body.cell.address.row &&
+      String(cell.address.col) === req.body.cell.address.col
+    ) {
+      rangeError = true;
+      break;
+    }
+  }
 
-   const operationResult = formulas[formulaIndex].calculate(values);
-   spreadsheet.cells.forEach(prevCell => {
-      if(prevCell.getAddress().row == req.body.cell.address.row && prevCell.getAddress().col == req.body.cell.address.col){
-         prevCell.setValue(operationResult);
-      }
-   });
+  if (rangeError) {
+    return res.json({ result: "Invalid range" });
+  }
 
-   const saveResult = spreadsheet.saveIntoFile();
-   if(!saveResult) {
-      return res.status(505).json({success: false});
-   }
+  //Get values from the cell range
+  const values = cells.map((cell) => {
+    if (cell.getValue() === null || cell.getValue() === "") {
+      return 0;
+    } else {
+      return parseFloat(cell.getValue());
+    }
+  });
 
-   return res.status(200).json({success: true, result: operationResult});
-   
+  if (!formulas[formulaIndex].checkValidity(values)) {
+    return res.json({ result: "Invalid values" });
+  }
+
+  const operationResult = formulas[formulaIndex].calculate(values);
+  spreadsheet.cells.forEach((prevCell) => {
+    if (
+      prevCell.getAddress().row == req.body.cell.address.row &&
+      prevCell.getAddress().col == req.body.cell.address.col
+    ) {
+      prevCell.setValue(operationResult);
+      prevCell.setFormula(req.body.cell.value);
+    }
+  });
+
+  const saveResult = spreadsheet.saveIntoFile();
+  if (!saveResult) {
+    return res.status(505).json({ success: false });
+  }
+
+  return res.status(200).json({ success: true, result: operationResult });
 });
 
 app.get("/new-spreadsheet", (req, res) => {

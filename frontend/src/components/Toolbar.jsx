@@ -147,7 +147,7 @@ const Toolbar = ({
         setSpreadsheet(res.data.spreadsheet);
         const cells = document.querySelectorAll("div.cell");
         cells.forEach(cell => {
-          cell.innerText = "";
+          cell.textContent = "";
         })
       }catch(error){
         console.log(error);
@@ -157,7 +157,7 @@ const Toolbar = ({
 
   //Cell handler functions
   const handleChangeCellValue = (event) => {
-    if (!selectedCell) {
+    if (!selectedCell.DOM) {
       event.target.value = "";
       alert("Select a cell");
       return;
@@ -165,7 +165,7 @@ const Toolbar = ({
     setSelectedFormulaName("");
     setSelectedCellValue(event.target.value);
 
-    selectedCell.innerText = event.target.value;
+    selectedCell.DOM.textContent = event.target.value;
 
     setValueChanged({ changed: true, id: event.target.id });
   };
@@ -215,6 +215,18 @@ const Toolbar = ({
   const handleSelectFormula = (event) => {
     setSelectedFormulaName(event.target.value);
   };
+
+  useEffect(() => {
+    console.log("________________________")
+    console.log(selectedCell, "Selected cell")
+    console.log(selectedCellValue, "Selected cell value")
+    console.log(selectedFormulaName, "Selected formula name")
+    console.log("________________________")
+
+
+  }, [selectedCell,selectedCellValue, selectedFormulaName])
+   
+  
 
   return (
     <div className="toolbar">
@@ -308,10 +320,12 @@ const Toolbar = ({
           className="cell-value-input"
           value={
             selectedFormulaName
-              ? "=" + selectedFormulaName + "(:)"
+            ? "=" + selectedFormulaName + "(:)"
+            : selectedCell.formula
+              ? selectedCell.formula
               : selectedCellValue
           }
-          id={selectedCell.id}
+          id={selectedCell.DOM.id}
           onInput={(e) => {
             handleChangeCellValue(e);
           }}

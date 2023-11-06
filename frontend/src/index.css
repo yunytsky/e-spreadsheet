@@ -167,6 +167,10 @@ h6 {
   flex-direction: column;
 }
 
+#formula {
+  display: none;
+}
+
 body {
   overflow: hidden;
 }

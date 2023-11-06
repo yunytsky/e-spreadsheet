@@ -6,13 +6,13 @@ import Spreadsheet from "./components/Spreadsheet";
 
 const App = () => {   
   const [spreadsheet, setSpreadsheet] = useState(null);
-  const [selectedCell, setSelectedCell] = useState("");
+  const [selectedCell, setSelectedCell] = useState({DOM: "", formula: ""});
   const [selectedCellValue, setSelectedCellValue] = useState(selectedCell.innerText);
   const [valueChanged, setValueChanged] = useState({changed: false, id: ""});
   const [selectedFormulaName, setSelectedFormulaName] = useState("");
 
   useEffect(() => {
-    setSelectedCellValue(selectedCell.innerText)
+    setSelectedCellValue(selectedCell.DOM.innerText)
  }, [selectedCell])
 
    return (

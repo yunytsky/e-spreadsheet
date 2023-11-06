@@ -9,10 +9,9 @@ const Spreadsheet = ({
   setSelectedCellValue,
   valueChanged,
   setValueChanged,
-  setSelectedFormulaName
+  setSelectedFormulaName,
 }) => {
 
-  const [fetchError, setFetchError] = useState(false);
   //Fetch the spreadsheet
   useEffect(() => {
     const fetchData = async () => {
@@ -32,16 +31,17 @@ const Spreadsheet = ({
     fetchData();
   }, []);
 
+
   //Cell handler functions
   const handleChangeCellValue = (event) => {
-    setSelectedCellValue(event.target.innerText);
+    setSelectedCellValue(event.target.textContent);
     setValueChanged({changed: true, id: event.target.id});
   };
 
   const handleUpdateValue = async (event) => {
     window.onbeforeunload = undefined;
     try{
-      const newValue = event.target.innerText;
+      const newValue = event.target.textContent;
 
       if (valueChanged.changed) {
         let res = await axios.post("http://localhost:3000/set-value", {
@@ -55,7 +55,6 @@ const Spreadsheet = ({
         });
   
         if(!res.data.success){
-          console.log("inner text", event.target.innerText)
           res = await axios.post("http://localhost:3000/calculate-formula", {
               cell: {
                 value: newValue,
@@ -65,9 +64,22 @@ const Spreadsheet = ({
                 },
               },
             });
-  
-            document.getElementById(valueChanged.id).innerText = res.data.result;
+
+          let formulaNode;
+          let valueTexNode;
+    
+          for (let i = 0; i < event.target.childNodes.length; i++) {
+            const node = event.target.childNodes[i];
+            if(node.id === "formula"){
+              formulaNode = node;
+            }else if(node.nodeType === 3){
+              valueTexNode = node;
+            }
           }
+
+          formulaNode.innerText = newValue;
+          valueTexNode.nodeValue = res.data.result;
+        }
       }
   
       setValueChanged(false);
@@ -82,7 +94,18 @@ const Spreadsheet = ({
       cell.classList.remove("selected");
     });
     event.target.classList.add("selected");
-    setSelectedCell(event.target);
+
+    let formulaDOM;
+    
+    for (let i = 0; i < event.target.childNodes.length; i++) {
+      const node = event.target.childNodes[i];
+      if(node.id === "formula"){
+        formulaDOM = node;
+        break;
+      }
+    }
+    console.log("FORMULA DM SELECTED CELL", event.target.childNodes)
+    setSelectedCell({DOM: event.target, formula: formulaDOM.innerText});
     setSelectedFormulaName("");
     document.getElementById("select-function").value=""
   };
@@ -112,20 +135,24 @@ const Spreadsheet = ({
         }
       });
 
-      let rows = [{ index: selectedCell.id, values: alphabet }];
+      let rows = [{ index: selectedCell.DOM.id, values: alphabet }];
 
       for (let i = 0; i < numbers.length; i++) {
         let values = [];
+        let formulas = [];
         let addresses = [];
         let row = { index: i + 1 };
         spreadsheet.cells.forEach((cell) => {
           if (cell.address.row == i + 1) {
             values.push(cell.value);
+            formulas.push(cell.formula);
             addresses.push(cell.address.col + cell.address.row);
           }
         });
         row.values = values;
+        row.formulas = formulas;
         row.addresses = addresses;
+
         rows.push(row);
       }
 
@@ -148,6 +175,7 @@ const Spreadsheet = ({
               suppressContentEditableWarning={true}
             >
               {value}
+              <div id="formula">{row.formulas[index]}</div>
             </div>
           );
         });
