@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios, { spread } from "axios";
 
 import functionLogo from "../assets/fx.svg"
 
@@ -12,6 +12,8 @@ const Toolbar = ({
   setValueChanged,
   selectedFormulaName,
   setSelectedFormulaName,
+  spreadsheet,
+  setSelectedCell
 }) => {
 
   const [formulas, setFormulas] = useState([]);
@@ -145,10 +147,22 @@ const Toolbar = ({
       try{
         const res = await axios.get("http://localhost:3000/new-spreadsheet");
         setSpreadsheet(res.data.spreadsheet);
-        const cells = document.querySelectorAll("div.cell");
-        cells.forEach(cell => {
-          cell.textContent = "";
-        })
+
+
+      // Select all cells and clear up their content
+      const cells = document.querySelectorAll("div.cell");
+      cells.forEach(cell => {
+        cell.innerText = "";
+        cell.setAttribute('data-formula', "");
+      });
+
+      //Clear up everything else
+      setSelectedCellValue("");
+      setSelectedCell({DOM: "", formula: ""});
+      setSelectedFormulaName("");
+      document.getElementById("select-function").value = "";
+
+
       }catch(error){
         console.log(error);
       }
@@ -157,6 +171,10 @@ const Toolbar = ({
 
   //Cell handler functions
   const handleChangeCellValue = (event) => {
+    if (event.target.hasAttribute('data-formula')) {
+      event.target.setAttribute('data-formula', "");
+    }
+
     if (!selectedCell.DOM) {
       event.target.value = "";
       alert("Select a cell");
@@ -197,9 +215,12 @@ const Toolbar = ({
             },
           });
   
+          document.getElementById(valueChanged.id).setAttribute('data-formula', newValue);
           document.getElementById(valueChanged.id).innerText = res.data.result;
         }
       }
+      setValueChanged(false);
+
     }catch(error){
       console.log(error);
     }
@@ -215,17 +236,6 @@ const Toolbar = ({
   const handleSelectFormula = (event) => {
     setSelectedFormulaName(event.target.value);
   };
-
-  useEffect(() => {
-    console.log("________________________")
-    console.log(selectedCell, "Selected cell")
-    console.log(selectedCellValue, "Selected cell value")
-    console.log(selectedFormulaName, "Selected formula name")
-    console.log("________________________")
-
-
-  }, [selectedCell,selectedCellValue, selectedFormulaName])
-   
   
 
   return (

@@ -34,14 +34,19 @@ const Spreadsheet = ({
 
   //Cell handler functions
   const handleChangeCellValue = (event) => {
-    setSelectedCellValue(event.target.textContent);
+    if (event.target.hasAttribute('data-formula')) {
+      event.target.setAttribute('data-formula', "");
+    }
+    setSelectedCellValue(event.target.innerText);
     setValueChanged({changed: true, id: event.target.id});
   };
 
   const handleUpdateValue = async (event) => {
     window.onbeforeunload = undefined;
+
     try{
       const newValue = event.target.textContent;
+  
 
       if (valueChanged.changed) {
         let res = await axios.post("http://localhost:3000/set-value", {
@@ -53,7 +58,7 @@ const Spreadsheet = ({
             },
           },
         });
-  
+
         if(!res.data.success){
           res = await axios.post("http://localhost:3000/calculate-formula", {
               cell: {
@@ -65,24 +70,15 @@ const Spreadsheet = ({
               },
             });
 
-          let formulaNode;
-          let valueTexNode;
-    
-          for (let i = 0; i < event.target.childNodes.length; i++) {
-            const node = event.target.childNodes[i];
-            if(node.id === "formula"){
-              formulaNode = node;
-            }else if(node.nodeType === 3){
-              valueTexNode = node;
-            }
-          }
-
-          formulaNode.innerText = newValue;
-          valueTexNode.nodeValue = res.data.result;
+            event.target.setAttribute('data-formula', newValue);
+            document.getElementById(valueChanged.id).innerText = res.data.result;
         }
       }
   
       setValueChanged(false);
+
+    
+
     }catch(error){
       console.log(error);
     }
@@ -95,17 +91,13 @@ const Spreadsheet = ({
     });
     event.target.classList.add("selected");
 
-    let formulaDOM;
-    
-    for (let i = 0; i < event.target.childNodes.length; i++) {
-      const node = event.target.childNodes[i];
-      if(node.id === "formula"){
-        formulaDOM = node;
-        break;
-      }
-    }
-    console.log("FORMULA DM SELECTED CELL", event.target.childNodes)
-    setSelectedCell({DOM: event.target, formula: formulaDOM.innerText});
+    let formula;
+    if(event.target.getAttribute("data-formula") != null){
+      formula = event.target.getAttribute("data-formula");
+    }else{
+      formula = ""
+    }    
+    setSelectedCell({DOM: event.target, formula: formula});
     setSelectedFormulaName("");
     document.getElementById("select-function").value=""
   };
@@ -173,9 +165,9 @@ const Spreadsheet = ({
               onDoubleClick={(e) => handleDoubleClick(e)}
               onFocus={(e) => handleCellFocus(e)}
               suppressContentEditableWarning={true}
+              data-formula={row.formulas[index]}
             >
               {value}
-              <div id="formula">{row.formulas[index]}</div>
             </div>
           );
         });
@@ -197,6 +189,7 @@ const Spreadsheet = ({
       );
     }
   };
+  
 
   return spreadsheet && renderSpreadsheet();
 };

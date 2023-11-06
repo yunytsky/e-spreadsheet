@@ -21,6 +21,7 @@ class Spreadsheet {
     reset() {
        this.cells.forEach(cell => {
           cell.setValue(null);
+          cell.setFormula(null);
        }) 
     }
  }
