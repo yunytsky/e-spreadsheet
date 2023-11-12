@@ -169,18 +169,57 @@ const Toolbar = ({
     }
   };
 
-  //Cell handler functions
-  const handleChangeCellValue = (event) => {
-    if (event.target.hasAttribute('data-formula')) {
-      event.target.setAttribute('data-formula', "");
+  //Recalculate function
+  const recalculate = async (matchingFormulas) => {
+    if(matchingFormulas.length > 0) {
+      try{
+        const delay = 300;
+
+        matchingFormulas.forEach(async (formula) => {
+         const value = formula.getAttribute("data-formula");
+         setTimeout(async() => {
+            const recalcRes = await axios.post(
+              "http://localhost:3000/calculate-formula",
+              {
+                cell: {
+                  value: value,
+                  address: {
+                    col: formula.id.slice(0, 1),
+                    row: formula.id.slice(1),
+                  },
+                },
+              }
+            );
+
+            formula.innerText = recalcRes.data.result;
+            
+          }, delay)
+        
+          
+        })
+  
+      }catch(err){
+        console.log(err)
+      }
     }
 
+  }
+
+  //Cell handler functions
+  const handleChangeCellValue = (event) => {
     if (!selectedCell.DOM) {
       event.target.value = "";
       alert("Select a cell");
       return;
     }
-    setSelectedFormulaName("");
+
+    const cell = document.querySelector(`.cell#${event.target.id}`)
+    if (cell.hasAttribute('data-formula')) {
+      cell.setAttribute('data-formula', "");
+      selectedCell.formula = "";
+    }
+
+
     setSelectedCellValue(event.target.value);
 
     selectedCell.DOM.textContent = event.target.value;
@@ -194,7 +233,7 @@ const Toolbar = ({
       const newValue = event.target.value;
 
       if (valueChanged.changed) {
-        let res = await axios.post("http://localhost:3000/set-value", {
+        const resSetValue = await axios.post("http://localhost:3000/set-value", {
           cell: {
             value: newValue,
             address: {
@@ -204,8 +243,8 @@ const Toolbar = ({
           },
         });
   
-        if (!res.data.success) {
-          res = await axios.post("http://localhost:3000/calculate-formula", {
+        if (!resSetValue.data.success) {
+          const resCalculate = await axios.post("http://localhost:3000/calculate-formula", {
             cell: {
               value: newValue,
               address: {
@@ -216,8 +255,57 @@ const Toolbar = ({
           });
   
           document.getElementById(valueChanged.id).setAttribute('data-formula', newValue);
-          document.getElementById(valueChanged.id).innerText = res.data.result;
+          document.getElementById(valueChanged.id).innerText = resCalculate.data.result;
         }
+
+         //Check if this cell is included in any formula
+         const cells = document.querySelectorAll("div.cell");
+         let allFormulas = [];
+         let matchingRanges = [];
+         let matchingFormulas = [];
+ 
+         cells.forEach((cell) => {
+           if (
+             cell.getAttribute("data-formula") !== null &&
+             cell.getAttribute("data-formula") !== ""
+           ) {
+             allFormulas.push(cell);
+           }
+         });
+
+         const targetCellId = event.target.id;
+         const targetCellCol = valueChanged.id.slice(0, 1);
+         const targetCellRow = parseInt(valueChanged.id.slice(1));
+ 
+         // Regex pattern to match cell range
+         const regexPattern = /\b([A-Z]+\d+:[A-Z]+\d+)\b/g;
+ 
+         allFormulas.forEach((formula) => {
+           const matches = formula
+             .getAttribute("data-formula")
+             .match(regexPattern);
+           if (matches) {
+             matches.forEach((match) => {
+               const [rangeStart, rangeEnd] = match.split(":");
+               const colStart = rangeStart.slice(0, 1);
+               const colEnd = rangeEnd.slice(0, 1);
+               const rowStart = parseInt(rangeStart.slice(1));
+               const rowEnd = parseInt(rangeEnd.slice(1));
+ 
+               if (
+                 targetCellCol >= colStart &&
+                 targetCellCol <= colEnd &&
+                 targetCellRow >= rowStart &&
+                 targetCellRow <= rowEnd
+               ) {
+                 matchingRanges.push(match);
+                 matchingFormulas.push(formula);
+               }
+             });
+           }
+         });
+ 
+         const recalcRes = await recalculate(matchingFormulas);
       }
       setValueChanged(false);
 

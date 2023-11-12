@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios, { all } from "axios";
 
 const Spreadsheet = ({
   spreadsheet,
@@ -31,11 +31,48 @@ const Spreadsheet = ({
     fetchData();
   }, []);
 
+  //Recalculate function
+  const recalculate = async (matchingFormulas) => {
+    if(matchingFormulas.length > 0) {
+      try{
+        const delay = 300;
+
+        matchingFormulas.forEach(async (formula) => {
+          const value = formula.getAttribute("data-formula");
+
+         setTimeout(async() => {
+            const recalcRes = await axios.post(
+              "http://localhost:3000/calculate-formula",
+              {
+                cell: {
+                  value: value,
+                  address: {
+                    col: formula.id.slice(0, 1),
+                    row: formula.id.slice(1),
+                  },
+                },
+              }
+            );
+
+            formula.innerText = recalcRes.data.result;
+            
+          }, delay)
+        
+          
+        })
+  
+      }catch(err){
+        console.log(err)
+      }
+    }
+
+  }
 
   //Cell handler functions
   const handleChangeCellValue = (event) => {
     if (event.target.hasAttribute('data-formula')) {
       event.target.setAttribute('data-formula', "");
+      selectedCell.formula = ""
     }
     setSelectedCellValue(event.target.innerText);
     setValueChanged({changed: true, id: event.target.id});
@@ -44,12 +81,11 @@ const Spreadsheet = ({
   const handleUpdateValue = async (event) => {
     window.onbeforeunload = undefined;
 
-    try{
+    try {
       const newValue = event.target.textContent;
-  
 
       if (valueChanged.changed) {
-        let res = await axios.post("http://localhost:3000/set-value", {
+        const resSetValue = await axios.post("http://localhost:3000/set-value", {
           cell: {
             value: newValue,
             address: {
@@ -59,27 +95,74 @@ const Spreadsheet = ({
           },
         });
 
-        if(!res.data.success){
-          res = await axios.post("http://localhost:3000/calculate-formula", {
-              cell: {
-                value: newValue,
-                address: {
-                  col: valueChanged.id.slice(0, 1),
-                  row: valueChanged.id.slice(1),
-                },
+        if (!resSetValue.data.success) {
+          const resCalculate = await axios.post("http://localhost:3000/calculate-formula", {
+            cell: {
+              value: newValue,
+              address: {
+                col: valueChanged.id.slice(0, 1),
+                row: valueChanged.id.slice(1),
               },
-            });
+            },
+          });
 
-            event.target.setAttribute('data-formula', newValue);
-            document.getElementById(valueChanged.id).innerText = res.data.result;
+          await event.target.setAttribute("data-formula", newValue);
+          document.getElementById(valueChanged.id).innerText = resCalculate.data.result;
         }
+
+        //Check if this cell is included in any formula
+        const cells = document.querySelectorAll("div.cell");
+        let allFormulas = [];
+        let matchingRanges = [];
+        let matchingFormulas = [];
+
+        cells.forEach((cell) => {
+          if (
+            cell.getAttribute("data-formula") !== null &&
+            cell.getAttribute("data-formula") !== ""
+          ) {
+            allFormulas.push(cell);
+          }
+        });
+
+        const targetCellId = event.target.id;
+        const targetCellCol = targetCellId.slice(0, 1);
+        const targetCellRow = parseInt(targetCellId.slice(1));
+
+        // Regex pattern to match cell range
+        const regexPattern = /\b([A-Z]+\d+:[A-Z]+\d+)\b/g;
+
+        allFormulas.forEach((formula) => {
+          const matches = formula
+            .getAttribute("data-formula")
+            .match(regexPattern);
+          if (matches) {
+            matches.forEach((match) => {
+              const [rangeStart, rangeEnd] = match.split(":");
+              const colStart = rangeStart.slice(0, 1);
+              const colEnd = rangeEnd.slice(0, 1);
+              const rowStart = parseInt(rangeStart.slice(1));
+              const rowEnd = parseInt(rangeEnd.slice(1));
+
+              if (
+                targetCellCol >= colStart &&
+                targetCellCol <= colEnd &&
+                targetCellRow >= rowStart &&
+                targetCellRow <= rowEnd
+              ) {
+                matchingRanges.push(match);
+                matchingFormulas.push(formula);
+              }
+            });
+          }
+        });
+
+        const recalcRes = await recalculate(matchingFormulas);
+
+
       }
-  
       setValueChanged(false);
-
-    
-
-    }catch(error){
+    } catch (error) {
       console.log(error);
     }
   };

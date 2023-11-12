@@ -139,6 +139,7 @@ app.post("/set-value", (req ,res) => {
    spreadsheet.cells.forEach(prevCell => {
       if(prevCell.getAddress().row == req.body.cell.address.row && prevCell.getAddress().col == req.body.cell.address.col){
          prevCell.setValue(req.body.cell.value);
+         prevCell.setFormula(null);
       }
    });
 
@@ -276,10 +277,13 @@ app.post("/calculate-formula", (req, res) => {
     return res.json({ result: "Invalid range" });
   }
 
+  const digitPattern = /^-?\d+$/;
   //Get values from the cell range
   const values = cells.map((cell) => {
     if (cell.getValue() === null || cell.getValue() === "") {
       return 0;
+    }else if(!digitPattern.test(cell.getValue())){
+      return cell.getValue();
     } else {
       return parseFloat(cell.getValue());
     }

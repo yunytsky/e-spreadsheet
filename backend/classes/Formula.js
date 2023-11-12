@@ -9,21 +9,24 @@ class Formula{
     
     checkValidity(cellsValues) {
        let isValid = true;
- 
+      
        if(this.type == "binary" && cellsValues.length != 2){
           isValid = false;
           return isValid;
        }
- 
+       
+       //Division by zero
        if(this.name === "FRAC" || this.name === "DIV" || this.name === "MOD") {
           if(cellsValues[1] === 0){
              isValid = false;
              return isValid;
           }
        }
- 
+       
+       //Check if number
+       const digitPattern = /^-?\d+$/;
        for(let i = 0; i<cellsValues.length; i++){
-          if(isNaN(cellsValues[i])){
+          if(!digitPattern.test(cellsValues[i])){
              isValid = false;
              return;
           }
