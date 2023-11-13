@@ -111,11 +111,11 @@ div.cell{
    padding: 1em 1.5em;  
 }
 
-.file-actions{
+.file-actions, .edit-actions{
    position: relative;
 }
 
-.file-button, .help-button{
+.file-button, .help-button, .edit-button{
    @include button-1;
    position: relative;
    padding: .5em 1em;
@@ -125,7 +125,7 @@ div.cell{
    }
 }
 
-.file-menu{
+.file-menu, .edit-menu{
    padding: 8px 0;
    display: none;
    white-space: nowrap;
@@ -152,9 +152,13 @@ div.cell{
 
    }
 
-   #file-create::before{
+   #file-create::before, #edit-expand::before{
       background-image: url("./assets/Add.svg");
 
+   }
+
+   #edit-reduce::before{
+      background-image: url("./assets/Reduce.svg");
    }
 
    #file-upload::before{
@@ -162,12 +166,12 @@ div.cell{
 
    }
 
-   #file-save::before, #file-create::before,#file-upload::before{
+   #file-save::before, #file-create::before,#file-upload::before,  #edit-expand::before,  #edit-reduce::before{
       content: "";
       position: absolute;
       top: 10px;
       left: 0;
-      filter: brightness(0) invert(9%) sepia(9%) saturate(5220%) hue-rotate(202deg) brightness(87%) contrast(111%);
+      filter: brightness(0%) invert(9%) sepia(9%) saturate(5220%) hue-rotate(202deg) brightness(87%) contrast(111%);
 
       background-repeat: no-repeat;
       background-size:contain;
@@ -193,7 +197,7 @@ div.cell{
        }
    }
 
-   #file-save, #file-create, #file-upload{
+   #file-save, #file-create, #file-upload, #edit-expand,  #edit-reduce{
       position: relative;
       @include button-2;
       cursor: pointer;
@@ -214,8 +218,73 @@ div.cell{
    margin-right: 1em;
    position: relative;
    padding: 2px 8px;
+   &:hover{
+      border: 1px solid $black-50;
+   }
+   &:active{
+      border: 1px solid $black-50;
+      box-shadow: inset 0 0 0 1px $black-50;
+   }
 }
 
+.edit-form{
+   position: absolute;
+   top: 100%;
+   left: 270%;
+   background-color: #fff ;
+   z-index: 99999;
+   display: flex;
+   flex-direction: column;
+   padding: 3em 5em;
+   box-shadow: $shadow;
+   border: 1px solid $black-10;
+   border-radius: 4px;
+}
+
+.edit-form-input-label{
+   color: $black-75;
+   margin-bottom: 8px;
+   @include body-3;
+}
+
+.edit-form-input{
+   margin-bottom: 24px;
+   border: 1px solid $black-25;
+   padding: .5em 1em;
+   &:hover{
+      border: 1px solid $black-50;
+   }
+   &:focus{
+      border: 1px solid $black-50;
+      box-shadow: inset 0 0 0 1px $black-50;
+   }
+
+}
+
+.edit-form-submit-button{
+   @include button-2;
+   background-color: $black-75;
+   border: 1px solid $black-75;
+   color: #fff;
+   border-radius: 8px;
+   padding: .35em .75em;
+   width: 25%;
+   &:hover{
+      background-color: transparent;
+      color: $black-75;
+   }
+   &:active{
+      background-color: transparent;
+      color: $black;
+      border: 1px solid $black;
+   }
+}
+
+.edit-form-error{
+   margin-bottom: 16px;
+   margin-top: -16px;
+   color: $red-01;
+}
 
 .function-label{
    user-select: none;
@@ -233,6 +302,13 @@ div.cell{
    border: 1px solid $black-25;
    padding: 2px 8px;
    width: 20em;
+   &:hover{
+      border: 1px solid $black-50;
+   }
+   &:focus{
+      border: 1px solid $black-50;
+      box-shadow: inset 0 0 0 1px $black-50;
+   }
 }
 
 .help-window{

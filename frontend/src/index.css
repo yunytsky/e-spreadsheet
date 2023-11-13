@@ -263,22 +263,22 @@ div.cell {
   padding: 1em 1.5em;
 }
 
-.file-actions {
+.file-actions, .edit-actions {
   position: relative;
 }
 
-.file-button, .help-button {
+.file-button, .help-button, .edit-button {
   font-size: 1rem;
   line-height: 1.2;
   position: relative;
   padding: 0.5em 1em;
   border-radius: 4px;
 }
-.file-button:hover, .help-button:hover {
+.file-button:hover, .help-button:hover, .edit-button:hover {
   background-color: #E6E6E9;
 }
 
-.file-menu {
+.file-menu, .edit-menu {
   padding: 8px 0;
   display: none;
   white-space: nowrap;
@@ -290,34 +290,37 @@ div.cell {
   box-shadow: 0px 0.33207px 0.6088px 0px rgba(61, 63, 79, 0.01), 0px 0.79801px 1.46302px 0px rgba(61, 63, 79, 0.01), 0px 1.50259px 2.75474px 0px rgba(61, 63, 79, 0.01), 0px 2.68036px 4.91399px 0px rgba(61, 63, 79, 0.02), 0px 5.01331px 9.19107px 0px rgba(61, 63, 79, 0.02), 0px 12px 22px 0px rgba(61, 63, 79, 0.03);
   z-index: 999;
 }
-.file-menu ul li {
+.file-menu ul li, .edit-menu ul li {
   cursor: pointer;
   padding: 8px 24px;
 }
-.file-menu ul li:hover {
+.file-menu ul li:hover, .edit-menu ul li:hover {
   background-color: rgba(243, 243, 244, 0.6);
 }
-.file-menu #file-save::before {
+.file-menu #file-save::before, .edit-menu #file-save::before {
   background-image: url("./assets/Save.svg");
 }
-.file-menu #file-create::before {
+.file-menu #file-create::before, .file-menu #edit-expand::before, .edit-menu #file-create::before, .edit-menu #edit-expand::before {
   background-image: url("./assets/Add.svg");
 }
-.file-menu #file-upload::before {
+.file-menu #edit-reduce::before, .edit-menu #edit-reduce::before {
+  background-image: url("./assets/Reduce.svg");
+}
+.file-menu #file-upload::before, .edit-menu #file-upload::before {
   background-image: url("./assets/Folder.svg");
 }
-.file-menu #file-save::before, .file-menu #file-create::before, .file-menu #file-upload::before {
+.file-menu #file-save::before, .file-menu #file-create::before, .file-menu #file-upload::before, .file-menu #edit-expand::before, .file-menu #edit-reduce::before, .edit-menu #file-save::before, .edit-menu #file-create::before, .edit-menu #file-upload::before, .edit-menu #edit-expand::before, .edit-menu #edit-reduce::before {
   content: "";
   position: absolute;
   top: 10px;
   left: 0;
-  filter: brightness(0) invert(9%) sepia(9%) saturate(5220%) hue-rotate(202deg) brightness(87%) contrast(111%);
+  filter: brightness(0%) invert(9%) sepia(9%) saturate(5220%) hue-rotate(202deg) brightness(87%) contrast(111%);
   background-repeat: no-repeat;
   background-size: contain;
   width: 18px;
   height: 18px;
 }
-.file-menu #file-create input, .file-menu #file-save input, .file-menu #file-upload input {
+.file-menu #file-create input, .file-menu #file-save input, .file-menu #file-upload input, .edit-menu #file-create input, .edit-menu #file-save input, .edit-menu #file-upload input {
   padding: 0;
   margin: 0;
   border: none;
@@ -326,13 +329,13 @@ div.cell {
   visibility: hidden;
   width: 100%;
 }
-.file-menu #file-upload input::-webkit-file-upload-button {
+.file-menu #file-upload input::-webkit-file-upload-button, .edit-menu #file-upload input::-webkit-file-upload-button {
   display: none;
 }
-.file-menu #file-save, .file-menu #file-create, .file-menu #file-upload {
+.file-menu #file-save, .file-menu #file-create, .file-menu #file-upload, .file-menu #edit-expand, .file-menu #edit-reduce, .edit-menu #file-save, .edit-menu #file-create, .edit-menu #file-upload, .edit-menu #edit-expand, .edit-menu #edit-reduce {
   position: relative;
   font-size: 0.875rem;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.2;
   cursor: pointer;
   display: flex;
@@ -348,6 +351,74 @@ div.cell {
   margin-right: 1em;
   position: relative;
   padding: 2px 8px;
+}
+#select-function:hover {
+  border: 1px solid #828391;
+}
+#select-function:active {
+  border: 1px solid #828391;
+  box-shadow: inset 0 0 0 1px #828391;
+}
+
+.edit-form {
+  position: absolute;
+  top: 100%;
+  left: 270%;
+  background-color: #fff;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  padding: 3em 5em;
+  box-shadow: 0px 0.33207px 0.6088px 0px rgba(61, 63, 79, 0.01), 0px 0.79801px 1.46302px 0px rgba(61, 63, 79, 0.01), 0px 1.50259px 2.75474px 0px rgba(61, 63, 79, 0.01), 0px 2.68036px 4.91399px 0px rgba(61, 63, 79, 0.02), 0px 5.01331px 9.19107px 0px rgba(61, 63, 79, 0.02), 0px 12px 22px 0px rgba(61, 63, 79, 0.03);
+  border: 1px solid #E6E6E9;
+  border-radius: 4px;
+}
+
+.edit-form-input-label {
+  color: #44465B;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.edit-form-input {
+  margin-bottom: 24px;
+  border: 1px solid #C1C1C8;
+  padding: 0.5em 1em;
+}
+.edit-form-input:hover {
+  border: 1px solid #828391;
+}
+.edit-form-input:focus {
+  border: 1px solid #828391;
+  box-shadow: inset 0 0 0 1px #828391;
+}
+
+.edit-form-submit-button {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  background-color: #44465B;
+  border: 1px solid #44465B;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.35em 0.75em;
+  width: 25%;
+}
+.edit-form-submit-button:hover {
+  background-color: transparent;
+  color: #44465B;
+}
+.edit-form-submit-button:active {
+  background-color: transparent;
+  color: #050824;
+  border: 1px solid #050824;
+}
+
+.edit-form-error {
+  margin-bottom: 16px;
+  margin-top: -16px;
+  color: #E45B4E;
 }
 
 .function-label {
@@ -368,6 +439,13 @@ div.cell {
   border: 1px solid #C1C1C8;
   padding: 2px 8px;
   width: 20em;
+}
+.cell-value-input:hover {
+  border: 1px solid #828391;
+}
+.cell-value-input:focus {
+  border: 1px solid #828391;
+  box-shadow: inset 0 0 0 1px #828391;
 }
 
 .help-window {

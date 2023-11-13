@@ -105,7 +105,6 @@ app.post("/create-spreadsheet", (req, res) => {
    //Cols
    const cols = ALPHABET;
    
-
    //Addresses
    const addresses = rows.map((row) => {
      const set = [];
@@ -114,7 +113,6 @@ app.post("/create-spreadsheet", (req, res) => {
      }
      return set;
    });
-
    
    //Cells
    const cells = [];
@@ -196,6 +194,40 @@ app.post("/upload-spreadsheet", upload.single("file"), (req, res) => {
    spreadsheet = new Spreadsheet(cells);
    return res.status(200).json({spreadsheet: spreadsheet});
 });
+
+app.post("/expand-spreadsheet", (req, res) => {
+  if(spreadsheet){
+    const expandResult = spreadsheet.expand(req.body.rowNum);
+    if(!expandResult){
+      console.log("invalid value")
+      return res.status(404).json({ success: false, message: "Invalid value" });
+
+    }
+    const saveResult = spreadsheet.saveIntoFile();
+    if (!saveResult) {
+      return res.status(505).json({ success: false });
+    }
+    return res.status(200).json({success:true, spreadsheet: spreadsheet})
+  }else{
+    return res.status(404).json({success: false, message: "Spreadsheet is undefined"})
+  }
+})
+
+app.post("/reduce-spreadsheet", (req, res) => {
+  if(spreadsheet){
+    const reduceResult = spreadsheet.reduce(req.body.rowNum);
+    if(!reduceResult){
+      return res.status(404).json({ success: false, message: "Invalid value" });
+    }
+    const saveResult = spreadsheet.saveIntoFile();
+    if (!saveResult) {
+      return res.status(505).json({ success: false });
+    }
+    return res.status(200).json({success:true, spreadsheet: spreadsheet})
+  }else{
+    return res.status(404).json({success: false, message: "Spreadsheet is undefined"})
+  }
+})
 
 app.post("/calculate-formula", (req, res) => {
   let rangeError = false;

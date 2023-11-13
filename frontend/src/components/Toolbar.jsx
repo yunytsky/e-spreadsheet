@@ -36,6 +36,14 @@ const Toolbar = ({
     const handleClickOutsideMenu = (event) => {
       const fileMenu = document.querySelector(".file-menu");
       const fileButton = document.querySelector(".file-button");
+
+      const editMenu = document.querySelector(".edit-menu");
+      const editButton = document.querySelector(".edit-button");
+      const editForm =
+        document.getElementById("edit-form-expand").style.display !== "none"
+          ? document.getElementById("edit-form-expand")
+          : document.getElementById("edit-form-reduce");
+
       if (
         fileMenu &&
         fileButton &&
@@ -43,6 +51,17 @@ const Toolbar = ({
         !fileButton.contains(event.target)
       ) {
         fileMenu.style.display = "none";
+      }
+      if (
+        editMenu &&
+        editButton &&
+        editForm &&
+        !editMenu.contains(event.target) &&
+        !editButton.contains(event.target) &&
+        !editForm.contains(event.target)
+      ) {
+        editMenu.style.display = "none";
+        editForm.style.display = "none";
       }
     };
 
@@ -55,6 +74,14 @@ const Toolbar = ({
       e.target.nextSibling.style.display = "block";
     } else {
       e.target.nextSibling.style.display = "none";
+    }
+
+    const editForm = document.getElementById("edit-form-expand").style.display !== "none"
+      ? document.getElementById("edit-form-expand")
+      : document.getElementById("edit-form-reduce");
+
+    if(editForm && editForm.style.display !== "none"){
+      editForm.style.display = "none";
     }
   };
 
@@ -324,6 +351,87 @@ const Toolbar = ({
   const handleSelectFormula = (event) => {
     setSelectedFormulaName(event.target.value);
   };
+
+
+  //Edit form states functions
+  const displayEditForm = (type) => {
+    let editForm;
+    if(type === "expand"){
+       editForm = document.getElementById("edit-form-expand");
+       hideEditForm("reduce");
+    }else if(type === "reduce"){
+       editForm = document.getElementById("edit-form-reduce");
+       hideEditForm("expand");
+    }
+
+    if(editForm && editForm.style.display === "none"){
+      editForm.style.display = "flex";
+    }
+
+
+  }
+
+  const hideEditForm = (type) => {
+    let editForm;
+    if (type === "expand") {
+       editForm = document.getElementById("edit-form-expand");
+    } else if (type === "reduce") {
+       editForm = document.getElementById("edit-form-reduce");
+    }
+    if (editForm && editForm.style.display !== "none") {
+      editForm.style.display = "none";
+    }
+  };
+
+  //Add rows function
+  const [expandRowNum, setExpandRowNum] = useState();
+  const [reduceRowNum, setReduceRowNum] = useState();
+  const [expandError, setExpandError] = useState(false);
+  const [reduceError, setReduceError] = useState(false);
+
+  const handleExpand = async (e) => {
+    e.preventDefault();
+    try{
+      if(expandError){
+        setExpandError(false);
+      }
+      const res = await axios.post("http://localhost:3000/expand-spreadsheet", {
+        rowNum: expandRowNum,
+      });
+
+      setSpreadsheet(res.data.spreadsheet);
+      setExpandRowNum("");
+      hideEditForm("expand");
+      document.querySelector(".edit-menu").style.display = "none";
+    }catch(err){
+      if(err.response){
+        setExpandError(true)
+      }
+      console.log(err);
+    }
+  }
+
+  const handleReduce = async (e) => {
+    e.preventDefault();
+    try{
+      if(reduceError){
+        setReduceError(false);
+      }
+      const res = await axios.post("http://localhost:3000/reduce-spreadsheet", {
+        rowNum: reduceRowNum,
+      });
+
+      setSpreadsheet(res.data.spreadsheet);
+      setReduceRowNum("");
+      hideEditForm("reduce");
+      document.querySelector(".edit-menu").style.display = "none";
+    }catch(err){
+      if(err.response){
+        setReduceError(true)
+      }
+      console.log(err);
+    }
+  }
   
 
   return (
@@ -379,16 +487,128 @@ const Toolbar = ({
             </ul>
           </div>
         </div>
+
+        <div className="edit-actions">
+          <button
+            className="edit-button"
+            onClick={(e) => {
+              toggleMenu(e);
+            }}
+          >
+            Edit
+          </button>
+
+          <div className="edit-menu">
+            <ul>
+              <li onMouseOver={()=> {displayEditForm("expand")}}>
+                <label htmlFor="edit-expand-input" id="edit-expand">
+                  Add rows
+                  <input
+                    type="button"
+                    name="edit-expand-input"
+                    id="edit-expand-input"
+                  />
+                </label>
+              </li>
+              <li onMouseOver={() => {displayEditForm("reduce")}}>
+                <label htmlFor="edit-reduce-input" id="edit-reduce">
+                  Delete rows
+                  <input
+                    type="button"
+                    name="edit-reduce-input"
+                    id="edit-reduce-input"
+                  />
+                </label>
+              </li>
+              
+            </ul>
+          </div>
+
+          <form
+            id="edit-form-expand"
+            className="edit-form"
+            style={{ display: "none" }}
+            onMouseLeave={() => {hideEditForm("expand")}}
+            onSubmit={(e) => {
+              handleExpand(e);
+            }}
+          >
+            <label htmlFor="edit-form-input" className="edit-form-input-label">
+              Enter number of rows you want to add
+            </label>
+            <input
+              type="number"
+              name="edit-form-input"
+              id="edit-form-input"
+              className="edit-form-input"
+              autoComplete="off"
+              value={expandRowNum}
+              onChange={(e) => {
+                setExpandRowNum(e.target.value);
+              }}
+            />
+            {expandError && (
+              <span className="edit-form-error">Value should be within 0 and 1000</span>
+            )}
+
+            <div className="edit-form-buttons">
+              <button className="edit-form-submit-button" type="submit">
+                Add
+              </button>
+            </div>
+          </form>
+
+          <form
+            id="edit-form-reduce"
+            className="edit-form"
+            style={{ display: "none" }}
+            onMouseLeave={() => {hideEditForm("reduce")}}
+            onSubmit={(e) => {
+              handleReduce(e);
+            }}
+          >
+            <label htmlFor="edit-form-input" className="edit-form-input-label">
+              Enter number of rows you want to remove
+            </label>
+            <input
+              type="number"
+              name="edit-form-input"
+              id="edit-form-input"
+              className="edit-form-input"
+              autoComplete="off"
+              value={reduceRowNum}
+              onChange={(e) => {
+                setReduceRowNum(e.target.value);
+              }}
+            />
+            {reduceError && (
+              <span className="edit-form-error">Invalid value</span>
+            )}
+
+            <div className="edit-form-buttons">
+              <button className="edit-form-submit-button" type="submit">
+                Add
+              </button>
+            </div>
+          </form>
+
+
+        </div>
+
         <div className="help-actions">
           <button className="help-button">Help</button>
           <div className="help-window">
             <div className="help-window-nav">
-              <button>Operation</button><button>Operation</button><button>Operation</button>
+              <button>Operation</button>
+              <button>Operation</button>
+              <button>Operation</button>
             </div>
             <div className="window-info">
-              <span>Info</span><span>Info</span><span>Info</span>
+              <span>Info</span>
+              <span>Info</span>
+              <span>Info</span>
             </div>
-          </div>         
+          </div>
         </div>
       </div>
       <div className="toolbar-bottom">
@@ -418,8 +638,8 @@ const Toolbar = ({
           className="cell-value-input"
           value={
             selectedFormulaName
-            ? "=" + selectedFormulaName + "(:)"
-            : selectedCell.formula
+              ? "=" + selectedFormulaName + "(:)"
+              : selectedCell.formula
               ? selectedCell.formula
               : selectedCellValue
           }
