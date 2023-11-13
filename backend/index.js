@@ -16,7 +16,7 @@ const Product = require("./classes/Product.js");
 const Max = require("./classes/Max.js");
 const Min = require("./classes/Min.js");
 const Modulus = require("./classes/Modulus.js");
-const integerDivision = require("./classes/integerDivision.js");
+const IntegerDivision = require("./classes/IntegerDivision.js");
 const Equals = require("./classes/Equals.js");
 const Greater = require("./classes/Greater.js");
 const Less = require("./classes/Greater.js");
@@ -82,7 +82,7 @@ const formulas = [
   new GreaterOrEqual("GREATER_OR_EQ", "binary"),
   new LessOrEqual("LESS_OR_EQ", "binary"),
   new NotEqual("NOT_EQUAL", "binary"),
-  new integerDivision("DIV", "binary"),
+  new IntegerDivision("DIV", "binary"),
 ];
 
 //Routes
