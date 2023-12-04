@@ -11,6 +11,7 @@ const Spreadsheet = ({
   setValueChanged,
   setSelectedFormulaName,
 }) => {
+  const [refChanged, setRefChanged] = useState(false);
 
   //Fetch the spreadsheet
   useEffect(() => {
@@ -29,7 +30,7 @@ const Spreadsheet = ({
     };
 
     fetchData();
-  }, []);
+  }, [refChanged]);
 
   //Recalculate function
   const recalculate = async (matchingFormulas) => {
@@ -68,12 +69,43 @@ const Spreadsheet = ({
 
   }
 
+  // Recursive function to update all dependent cells
+const updateDependentCells = (targetId, newValue) => {
+  // Find all cells that reference the target cell
+  const dependentCells = document.querySelectorAll('[data-reference]');
+  
+  dependentCells.forEach((cell) => {
+    const referenceCol = cell.getAttribute('data-reference').slice(1, 2);
+    const referenceRow = cell.getAttribute('data-reference').slice(2);
+
+    if (
+      cell.getAttribute('data-reference') !== null &&
+      cell.getAttribute('data-reference') !== '' &&
+      referenceCol === targetId.slice(0, 1) &&
+      referenceRow === targetId.slice(1)
+    ) {
+      // Update the displayed value
+      cell.innerText = newValue;
+
+      // Recursively update dependent cells
+      updateDependentCells(cell.id, newValue);
+    }
+  });
+};
+
+
   //Cell handler functions
   const handleChangeCellValue = (event) => {
     if (event.target.hasAttribute('data-formula')) {
       event.target.setAttribute('data-formula', "");
       selectedCell.formula = ""
     }
+
+    if (event.target.hasAttribute('data-reference')) {
+      event.target.setAttribute('data-reference', "");
+      selectedCell.reference = ""
+    }
+
     setSelectedCellValue(event.target.innerText);
     setValueChanged({changed: true, id: event.target.id});
   };
@@ -85,18 +117,9 @@ const Spreadsheet = ({
       const newValue = event.target.textContent;
 
       if (valueChanged.changed) {
-        const resSetValue = await axios.post("http://localhost:3000/set-value", {
-          cell: {
-            value: newValue,
-            address: {
-              col: valueChanged.id.slice(0, 1),
-              row: valueChanged.id.slice(1),
-            },
-          },
-        });
-
-        if (!resSetValue.data.success) {
-          const resCalculate = await axios.post("http://localhost:3000/calculate-formula", {
+        const resSetValue = await axios.post(
+          "http://localhost:3000/set-value",
+          {
             cell: {
               value: newValue,
               address: {
@@ -104,10 +127,32 @@ const Spreadsheet = ({
                 row: valueChanged.id.slice(1),
               },
             },
-          });
+          }
+        );
+
+        if (resSetValue.data.value !== undefined) {
+          await event.target.setAttribute("data-reference", newValue);
+          document.getElementById(valueChanged.id).innerText =
+            resSetValue.data.value;
+        }
+
+        if (!resSetValue.data.success) {
+          const resCalculate = await axios.post(
+            "http://localhost:3000/calculate-formula",
+            {
+              cell: {
+                value: newValue,
+                address: {
+                  col: valueChanged.id.slice(0, 1),
+                  row: valueChanged.id.slice(1),
+                },
+              },
+            }
+          );
 
           await event.target.setAttribute("data-formula", newValue);
-          document.getElementById(valueChanged.id).innerText = resCalculate.data.result;
+          document.getElementById(valueChanged.id).innerText =
+            resCalculate.data.result;
         }
 
         //Check if this cell is included in any formula
@@ -159,11 +204,29 @@ const Spreadsheet = ({
 
         const recalcRes = await recalculate(matchingFormulas);
 
-
+        //Check if cell is referenced anywhere
+        cells.forEach((cell) => {
+          if (
+            cell.getAttribute("data-reference") !== null &&
+            cell.getAttribute("data-reference") !== "" &&
+            cell.getAttribute("data-reference").slice(1, 2) == event.target.id.slice(0, 1) &&
+            cell.getAttribute("data-reference").slice(2) == event.target.id.slice(1)
+          ) {
+            updateDependentCells(targetCellId, newValue);
+          }
+          
+        });
       }
+
+
+
       setValueChanged(false);
+      
+
     } catch (error) {
-      console.log(error);
+      if(error.response.data.message){
+        event.target.innerText = error.response.data.message;
+      }
     }
   };
 
@@ -179,8 +242,16 @@ const Spreadsheet = ({
       formula = event.target.getAttribute("data-formula");
     }else{
       formula = ""
-    }    
-    setSelectedCell({DOM: event.target, formula: formula});
+    }   
+  
+    let reference;
+    if(event.target.getAttribute("data-reference") != null){
+      reference = event.target.getAttribute("data-reference");
+    }else{
+      reference = ""
+    }   
+
+    setSelectedCell({DOM: event.target, formula: formula, reference: reference});
     setSelectedFormulaName("");
     document.getElementById("select-function").value=""
   };
@@ -216,18 +287,20 @@ const Spreadsheet = ({
         let values = [];
         let formulas = [];
         let addresses = [];
+        let references = [];
         let row = { index: i + 1 };
         spreadsheet.cells.forEach((cell) => {
           if (cell.address.row == i + 1) {
             values.push(cell.value);
             formulas.push(cell.formula);
             addresses.push(cell.address.col + cell.address.row);
+            references.push(cell.reference);
           }
         });
         row.values = values;
         row.formulas = formulas;
         row.addresses = addresses;
-
+        row.references = references;
         rows.push(row);
       }
 
@@ -249,6 +322,7 @@ const Spreadsheet = ({
               onFocus={(e) => handleCellFocus(e)}
               suppressContentEditableWarning={true}
               data-formula={row.formulas[index]}
+              data-reference={row.references[index]}
             >
               {value}
             </div>

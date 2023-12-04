@@ -6,7 +6,7 @@ import Spreadsheet from "./components/Spreadsheet";
 
 const App = () => {   
   const [spreadsheet, setSpreadsheet] = useState(null);
-  const [selectedCell, setSelectedCell] = useState({DOM: "", formula: ""});
+  const [selectedCell, setSelectedCell] = useState({DOM: "", formula: "", reference: ""});
   const [selectedCellValue, setSelectedCellValue] = useState(selectedCell.innerText);
   const [valueChanged, setValueChanged] = useState({changed: false, id: ""});
   const [selectedFormulaName, setSelectedFormulaName] = useState("");

@@ -24,7 +24,7 @@ class Formula{
        }
        
        //Check if number
-       const digitPattern = /^-?\d+$/;
+       const digitPattern = /^-?\d+(\.\d+)?$/;
        for(let i = 0; i<cellsValues.length; i++){
           if(!digitPattern.test(cellsValues[i])){
              isValid = false;

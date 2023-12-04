@@ -1,8 +1,9 @@
 class Cell {
-  constructor(value, formula, address) {
+  constructor(value, formula, address, reference) {
     this.value = value;
     this.formula = formula;
     this.address = address;
+    this.reference = reference;
   }
 
   getValue() {
@@ -23,6 +24,9 @@ class Cell {
 
   getAddress() {
     return this.address;
+  }
+  setReference(reference){
+    this.reference = reference;
   }
 }
 

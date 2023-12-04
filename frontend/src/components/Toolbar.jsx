@@ -181,6 +181,8 @@ const Toolbar = ({
       cells.forEach(cell => {
         cell.innerText = "";
         cell.setAttribute('data-formula', "");
+        cell.setAttribute('data-reference', "");
+
       });
 
       //Clear up everything else
@@ -245,10 +247,13 @@ const Toolbar = ({
       cell.setAttribute('data-formula', "");
       selectedCell.formula = "";
     }
-
+    if (cell.hasAttribute('data-reference')) {
+      cell.setAttribute('data-reference', "");
+      selectedCell.reference = "";
+    }
 
     setSelectedCellValue(event.target.value);
-
+    setSelectedFormulaName("");
     selectedCell.DOM.textContent = event.target.value;
 
     setValueChanged({ changed: true, id: event.target.id });
@@ -269,6 +274,12 @@ const Toolbar = ({
             },
           },
         });
+
+        if (resSetValue.data.value !== undefined) {
+          document.getElementById(valueChanged.id).setAttribute("data-reference", newValue);
+          document.getElementById(valueChanged.id).innerText =
+            resSetValue.data.value;
+        }
   
         if (!resSetValue.data.success) {
           const resCalculate = await axios.post("http://localhost:3000/calculate-formula", {
@@ -333,11 +344,25 @@ const Toolbar = ({
          });
  
          const recalcRes = await recalculate(matchingFormulas);
+
+        //Check if cell is referenced anywhere
+        cells.forEach((cell) => {
+          if (
+            cell.getAttribute("data-reference") !== null &&
+            cell.getAttribute("data-reference") !== "" &&
+            cell.getAttribute("data-reference").slice(1, 2) == valueChanged.id.slice(0, 1) &&
+            cell.getAttribute("data-reference").slice(2) == valueChanged.id.slice(1)
+          ) {
+            cell.innerText =  document.getElementById(valueChanged.id).innerText;
+          }
+        });
       }
       setValueChanged(false);
 
     }catch(error){
-      console.log(error);
+      if(error.response.data.message){
+        event.target.innerText = error.response.data.message;
+      }
     }
   };
 
@@ -587,7 +612,7 @@ const Toolbar = ({
 
             <div className="edit-form-buttons">
               <button className="edit-form-submit-button" type="submit">
-                Add
+                Delete
               </button>
             </div>
           </form>
@@ -641,6 +666,8 @@ const Toolbar = ({
               ? "=" + selectedFormulaName + "(:)"
               : selectedCell.formula
               ? selectedCell.formula
+              :selectedCell.reference 
+              ? selectedCell.reference
               : selectedCellValue
           }
           id={selectedCell.DOM.id}

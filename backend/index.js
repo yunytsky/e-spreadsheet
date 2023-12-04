@@ -61,7 +61,9 @@ if (fs.existsSync('./public/spreadsheet.json')) {
      );
      const value = cellObject.value;
      const formula = cellObject.formula;
-     const cell = new Cell(value, formula, address);
+     const reference = cellObject.reference;
+
+     const cell = new Cell(value, formula, address, reference);
      cells.push(cell);
    });
    spreadsheet = new Spreadsheet(cells);
@@ -85,6 +87,26 @@ const formulas = [
   new IntegerDivision("DIV", "binary"),
 ];
 
+function updateDependentCells(changedCell, newValue) {
+  for (let i = 0; i < spreadsheet.cells.length; i++) {
+    let cell = spreadsheet.cells[i];
+
+    if (cell.reference != null) {
+      let cellReferenceCol = cell.reference.slice(1, 2);
+      let cellReferenceRow = cell.reference.slice(2);
+
+      if (
+        cellReferenceCol == changedCell.address.col &&
+        cellReferenceRow == changedCell.address.row
+      ) {
+        cell.value = newValue;
+        // Recursively update cells that depend on the current cell
+        updateDependentCells(cell, newValue);
+      }
+    }
+  }
+}
+
 //Routes
 app.get("/get-spreadsheet", (req, res) => {
    if(spreadsheet){
@@ -95,7 +117,6 @@ app.get("/get-spreadsheet", (req, res) => {
 });
 
 app.post("/create-spreadsheet", (req, res) => {
-
    //Rows
    const rows = [];
    for(let i = 1; i <= 100; i++){
@@ -118,7 +139,7 @@ app.post("/create-spreadsheet", (req, res) => {
    const cells = [];
    addresses.forEach(set => {
       set.forEach(address => {
-         const cell = new Cell(null, null, address);
+         const cell = new Cell(null, null, address, null);
          cells.push(cell);
       })
    });
@@ -130,9 +151,79 @@ app.post("/create-spreadsheet", (req, res) => {
 });
 
 app.post("/set-value", (req ,res) => {
+
    if(req.body.cell.value.startsWith("=")){
-      return res.status(200).json({success: false, message: "Value is a formula"});
+    const pattern = /^=[A-Z]\d+$/;
+
+    //Handle references
+    if(pattern.test(req.body.cell.value)){
+      const col = req.body.cell.value.slice(1, 2);
+      const row = req.body.cell.value.slice(2);
+
+      let referencedCell = null;
+      //Get referenced cell
+      for (let i = 0; i < spreadsheet.cells.length; i++) {
+        let cell = spreadsheet.cells[i];
+        
+        if (cell.getAddress().col == col && cell.getAddress().row == row) {
+          referencedCell = cell;
+          break; 
+        }
+      }
+
+      if(referencedCell.address.row == req.body.cell.address.row && referencedCell.address.col == req.body.cell.address.col){
+        return res.status(400).json({success: false, message: "Invalid reference"});
+ 
+      }
+
+      let newRefValue = 0;
+      if(referencedCell !== null){
+        spreadsheet.cells.forEach(prevCell => {
+          if(prevCell.getAddress().row == req.body.cell.address.row && prevCell.getAddress().col == req.body.cell.address.col){
+            if(referencedCell.value == null){
+              prevCell.setValue(0);
+            }else{
+              newRefValue = referencedCell.value;
+              prevCell.setValue(referencedCell.value);
+            }
+             prevCell.setFormula(null);
+             prevCell.setReference(req.body.cell.value);
+          }
+       });
+
+       const saveResult = spreadsheet.saveIntoFile();
+       if(!saveResult) {
+          return res.status(505).json({success: false});
+       }
+
+       return res.status(200).json({success: true, value: newRefValue});
+
+      }
+
+
+    }
+
+    return res.status(200).json({success: false, message: "Value is a formula"});
    }
+
+ // Check if referenced anywhere
+  for (let i = 0; i < spreadsheet.cells.length; i++) {
+  let cell = spreadsheet.cells[i];
+
+  if (cell.reference != null) {
+    let cellReferenceCol = cell.reference.slice(1, 2);
+    let cellReferenceRow = cell.reference.slice(2);
+
+    if (
+      cellReferenceCol == req.body.cell.address.col &&
+      cellReferenceRow == req.body.cell.address.row
+    ) {
+      cell.value = req.body.cell.value;
+      // Recursively update cells that depend on the current cell
+      updateDependentCells(cell, req.body.cell.value);
+    }
+  }
+}
 
    spreadsheet.cells.forEach(prevCell => {
       if(prevCell.getAddress().row == req.body.cell.address.row && prevCell.getAddress().col == req.body.cell.address.col){
@@ -187,8 +278,9 @@ app.post("/upload-spreadsheet", upload.single("file"), (req, res) => {
      );
      const value = cellObject.value;
      const formula = cellObject.formula;
+     const reference = cellObject.reference;
 
-     const cell = new Cell(value, formula, address);
+     const cell = new Cell(value, formula, address, reference);
      cells.push(cell);
    });
    spreadsheet = new Spreadsheet(cells);
@@ -309,7 +401,7 @@ app.post("/calculate-formula", (req, res) => {
     return res.json({ result: "Invalid range" });
   }
 
-  const digitPattern = /^-?\d+$/;
+  const digitPattern = /^-?\d+(\.\d+)?$/;
   //Get values from the cell range
   const values = cells.map((cell) => {
     if (cell.getValue() === null || cell.getValue() === "") {
